@@ -1,0 +1,2328 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#7c2d12">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Gia Phả Dòng Họ - Kết Nối Cội Nguồn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif:ital,wght@0,600;0,700;1,500&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Noto Serif', 'serif'],
+                    },
+                    colors: {
+                        heritage: {
+                            50: '#fdfaf6',
+                            100: '#f9f1e4',
+                            200: '#f2dfc2',
+                            300: '#e7c595',
+                            400: '#dba563',
+                            500: '#d1893d',
+                            600: '#c26f30',
+                            700: '#a15429',
+                            800: '#824326',
+                            900: '#6b3822',
+                            950: '#3b1b0f',
+                        },
+                        crimson: {
+                            800: '#991b1b',
+                            900: '#7f1d1d',
+                            950: '#450a0a',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #fdfaf6;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #dba563;
+            border-radius: 9999px;
+        }
+        body {
+            background-color: #f3ece1;
+            -webkit-tap-highlight-color: transparent;
+            overscroll-behavior-y: contain;
+        }
+        .bg-traditional-pattern {
+            background-color: #fdfaf6;
+            background-image: radial-gradient(#d1893d18 1px, transparent 1px);
+            background-size: 16px 16px;
+        }
+        .bg-cover-ornament {
+            background-color: #450a0a;
+            background-image: radial-gradient(circle at 50% 35%, #7f1d1d 0%, #450a0a 70%, #2a0606 100%);
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .pb-safe {
+            padding-bottom: calc(5rem + env(safe-area-inset-bottom));
+        }
+        .bottom-nav-safe {
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+    </style>
+</head>
+<body class="text-stone-800 antialiased selection:bg-amber-200 selection:text-amber-950">
+
+    <!-- Khung ứng dụng chính Mobile-first -->
+    <div id="app" class="max-w-lg mx-auto min-h-screen bg-traditional-pattern shadow-2xl relative flex flex-col border-x border-amber-200/70">
+        
+        <!-- Thanh trạng thái Admin nổi trên cùng -->
+        <div id="admin-banner" class="hidden bg-crimson-900 text-amber-100 px-3 py-1.5 text-[11px] font-medium flex items-center justify-between gap-2 sticky top-0 z-40 shadow-md">
+            <div class="flex items-center gap-1.5 truncate">
+                <i data-lucide="shield-check" class="w-4 h-4 text-amber-400 shrink-0"></i>
+                <span class="truncate">Chế độ Chủ Website • Toàn quyền thêm, sửa, xóa</span>
+            </div>
+            <button onclick="logoutAdmin()" class="bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 px-2.5 py-0.5 rounded-full text-[11px] border border-amber-400/30 shrink-0 transition">
+                Thoát
+            </button>
+        </div>
+
+        <!-- Nội dung chính thay đổi theo Tab -->
+        <main id="main-content" class="flex-1 pb-safe overflow-x-hidden">
+            <!-- Render bằng JS -->
+        </main>
+
+        <!-- Nút thêm thành viên nhanh (Chỉ hiện cho Admin ở Tab Cây Gia Phả) -->
+        <button id="fab-add-member" onclick="openMemberFormModal()" class="hidden fixed bottom-20 right-4 sm:right-[calc(50%-15rem)] z-30 bg-gradient-to-r from-crimson-800 to-amber-700 text-white p-3.5 rounded-full shadow-lg shadow-amber-900/30 hover:scale-105 active:scale-95 transition flex items-center gap-2">
+            <i data-lucide="user-plus" class="w-5 h-5"></i>
+            <span class="text-xs font-semibold pr-1">Thêm thành viên</span>
+        </button>
+
+        <!-- Thanh điều hướng dưới cùng (Render động theo thứ tự tab) -->
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 max-w-lg mx-auto bg-white/95 backdrop-blur-md border-t border-amber-200/80 z-30 bottom-nav-safe shadow-[0_-4px_20px_-5px_rgba(120,53,15,0.08)]">
+            <!-- Render động bằng JS -->
+        </nav>
+    </div>
+
+    <!-- ==================== CÁC MODAL TƯƠNG TÁC ==================== -->
+
+    <!-- 1. Modal Hồ Sơ Chi Tiết Thành Viên -->
+    <div id="member-detail-modal" class="fixed inset-0 z-50 hidden bg-stone-950/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-heritage-50 w-full max-w-lg max-h-[92vh] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-amber-200">
+            <div class="bg-gradient-to-r from-crimson-900 via-amber-900 to-heritage-900 text-amber-50 px-5 py-4 flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2">
+                    <i data-lucide="user-check" class="w-5 h-5 text-amber-300"></i>
+                    <h3 class="font-serif font-bold text-base">Hồ Sơ Thành Viên</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button id="btn-edit-member-modal" onclick="editCurrentMember()" class="hidden bg-amber-500 text-stone-950 hover:bg-amber-400 px-3 py-1.5 rounded-full text-xs font-bold flex items-center gap-1 shadow transition">
+                        <i data-lucide="pencil" class="w-3.5 h-3.5"></i> Chỉnh sửa
+                    </button>
+                    <button onclick="closeModal('member-detail-modal')" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            <div id="member-detail-content" class="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+                <!-- Render bằng JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Modal Thêm / Chỉnh Sửa Thành Viên (Tất cả trường KHÔNG BẮT BUỘC) -->
+    <div id="member-form-modal" class="fixed inset-0 z-50 hidden bg-stone-950/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg max-h-[92vh] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-amber-200">
+            <div class="bg-crimson-900 text-white px-5 py-4 flex items-center justify-between shrink-0">
+                <div>
+                    <h3 id="member-form-title" class="font-serif font-bold text-base">Thêm Thành Viên Mới</h3>
+                    <p class="text-[11px] text-amber-200/90">Tất cả thông tin đều không bắt buộc, có thể để trống</p>
+                </div>
+                <button onclick="closeModal('member-form-modal')" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="member-form" onsubmit="saveMemberForm(event)" class="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1 text-sm">
+                <input type="hidden" id="form-member-id">
+                
+                <!-- Ảnh Avatar -->
+                <div class="flex flex-col items-center gap-2 bg-heritage-50 p-3.5 rounded-2xl border border-amber-200/80">
+                    <div class="relative">
+                        <img id="form-avatar-preview" src="https://placehold.co/150x150/f2dfc2/7c2d12?text=Avatar" alt="Preview" class="w-24 h-24 rounded-full object-cover border-4 border-amber-500 shadow-md">
+                        <label for="form-avatar-input" class="absolute bottom-0 right-0 bg-crimson-800 text-white p-2 rounded-full shadow-lg cursor-pointer hover:bg-crimson-700 transition" title="Tải ảnh lên">
+                            <i data-lucide="camera" class="w-4 h-4"></i>
+                        </label>
+                        <input type="file" id="form-avatar-input" accept="image/*" class="hidden" onchange="handleImageUpload(event, 'form-avatar-preview', 'form-avatar-data', 320)">
+                    </div>
+                    <input type="hidden" id="form-avatar-data">
+                    <div class="flex items-center gap-3 text-xs">
+                        <label for="form-avatar-input" class="text-crimson-800 font-semibold cursor-pointer hover:underline">Chọn ảnh</label>
+                        <span class="text-stone-300">|</span>
+                        <button type="button" onclick="clearMemberAvatar()" class="text-stone-500 hover:text-red-600">Xóa ảnh</button>
+                    </div>
+                </div>
+
+                <!-- Nhóm 1: Định danh & Phả hệ -->
+                <div class="space-y-3 bg-stone-50/70 p-3.5 rounded-2xl border border-stone-200/80">
+                    <div class="text-xs font-bold text-crimson-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="user" class="w-3.5 h-3.5"></i> Định Danh & Vị Trí Phả Hệ
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Họ và tên</label>
+                            <input type="text" id="form-name" placeholder="VD: Võ Văn An (để trống nếu chưa rõ)" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Tên tự / Tên hiệu / Thánh danh</label>
+                            <input type="text" id="form-alias" placeholder="VD: Tự Phúc Tâm" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2.5">
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Giới tính</label>
+                            <select id="form-gender" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                                <option value="male">Nam</option>
+                                <option value="female">Nữ</option>
+                                <option value="unknown">Không rõ</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Đời thứ</label>
+                            <input type="number" id="form-generation" min="1" max="50" value="1" class="w-full px-3 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Phân loại</label>
+                            <select id="form-relation-type" class="w-full px-2.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                                <option value="Gốc">Gốc họ</option>
+                                <option value="Dâu">Con dâu</option>
+                                <option value="Rể">Con rể</option>
+                                <option value="Con nuôi">Con nuôi</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Thứ bậc / Vai vế</label>
+                            <input type="text" id="form-order" placeholder="VD: Thủy tổ, Trưởng nam, Thứ nữ..." class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Chi / Nhánh</label>
+                            <input type="text" id="form-branch" placeholder="VD: Gốc, Chi Trưởng, Chi Hai..." class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-stone-700 mb-1">Cha / Mẹ trong họ</label>
+                        <select id="form-parent" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                            <option value="">-- Thủy tổ / Không liên kết --</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block font-semibold text-stone-700 mb-1">Vợ / Chồng (Phối ngẫu)</label>
+                        <input type="text" id="form-spouse" placeholder="VD: Trần Thị Nhàn (1892 - 1970)" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                    </div>
+                </div>
+
+                <!-- Nhóm 2: Thông Tin Hành Chính & Căn Cước -->
+                <div class="space-y-3 bg-amber-50/50 p-3.5 rounded-2xl border border-amber-200/80">
+                    <div class="text-xs font-bold text-crimson-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="file-text" class="w-3.5 h-3.5"></i> Thông Tin Hành Chính & Căn Cước
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Nơi khai sinh</label>
+                            <input type="text" id="form-birthplace" placeholder="VD: Xã Bình Minh, Thăng Bình, Quảng Nam" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Quê quán</label>
+                            <input type="text" id="form-hometown" placeholder="VD: Làng An Hòa, Bình Minh, Quảng Nam" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Dân tộc</label>
+                            <input type="text" id="form-ethnicity" placeholder="VD: Kinh" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Tôn giáo</label>
+                            <input type="text" id="form-religion" placeholder="VD: Không, Phật giáo..." class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block font-semibold text-stone-700 mb-1">Nơi thường trú</label>
+                        <input type="text" id="form-address" placeholder="VD: Quận Hải Châu, TP. Đà Nẵng" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Nghề nghiệp / Học vấn</label>
+                            <input type="text" id="form-job" placeholder="VD: Giáo viên, Kỹ sư..." class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Số điện thoại / Liên hệ</label>
+                            <input type="text" id="form-phone" placeholder="VD: 0905.xxx.xxx" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Nhóm 3: Mốc Thời Gian Sinh / Mất -->
+                <div class="space-y-3 bg-stone-50/70 p-3.5 rounded-2xl border border-stone-200/80">
+                    <div class="text-xs font-bold text-crimson-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <i data-lucide="calendar" class="w-3.5 h-3.5"></i> Mốc Thời Gian (Nhập tự do)
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Ngày tháng năm sinh</label>
+                            <input type="text" id="form-birth" placeholder="VD: 12/05/1950 hoặc 1888" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Tình trạng hiện tại</label>
+                            <select id="form-status" onchange="toggleDeceasedFields()" class="w-full px-3 py-2 rounded-xl border border-stone-300 focus:border-amber-600 outline-none bg-white">
+                                <option value="alive">Còn sống</option>
+                                <option value="deceased">Đã tạ thế</option>
+                                <option value="unknown">Không rõ</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div id="deceased-fields" class="hidden space-y-3 pt-2 border-t border-stone-200">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                                <label class="block font-semibold text-stone-700 mb-1">Ngày tháng năm mất</label>
+                                <input type="text" id="form-death-date" placeholder="VD: 20/11/1965 hoặc 1965" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 bg-white outline-none">
+                            </div>
+                            <div>
+                                <label class="block font-semibold text-stone-700 mb-1">Ngày giỗ (Âm lịch)</label>
+                                <input type="text" id="form-death" placeholder="VD: 15/03 Âm lịch" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 bg-white outline-none">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Nơi an táng / Phần mộ</label>
+                            <input type="text" id="form-burial" placeholder="VD: Khu lăng mộ Tổ dòng họ Võ, Gò Đồi An Hòa" class="w-full px-3.5 py-2 rounded-xl border border-stone-300 bg-white outline-none">
+                        </div>
+                        <div>
+                            <label class="block font-semibold text-stone-700 mb-1">Link Google Maps phần mộ (Tùy chọn)</label>
+                            <input type="text" id="form-burial-map" placeholder="https://maps.google.com/..." class="w-full px-3.5 py-2 rounded-xl border border-stone-300 bg-white outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tiểu sử -->
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Tiểu sử, ghi chú & công đức</label>
+                    <textarea id="form-bio" rows="3" placeholder="Ghi chép cuộc đời, đóng góp cho gia đình và dòng họ..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:border-amber-600 outline-none"></textarea>
+                </div>
+
+                <div class="flex items-center justify-between gap-3 pt-2 border-t border-stone-200">
+                    <button type="button" id="btn-delete-member" onclick="deleteCurrentMember()" class="hidden px-4 py-2.5 rounded-xl bg-red-50 text-red-700 hover:bg-red-100 font-semibold text-xs flex items-center gap-1.5 transition">
+                        <i data-lucide="trash-2" class="w-4 h-4"></i> Xóa
+                    </button>
+                    <div class="flex gap-2 ml-auto">
+                        <button type="button" onclick="closeModal('member-form-modal')" class="px-4 py-2.5 rounded-xl bg-stone-100 text-stone-700 hover:bg-stone-200 font-semibold transition">Hủy</button>
+                        <button type="submit" class="px-5 py-2.5 rounded-xl bg-crimson-800 text-white hover:bg-crimson-700 font-semibold shadow-md transition">Lưu hồ sơ</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3. Modal Cấu Hình Ảnh Bìa, Danh Sách Dòng Chữ Bìa & Thứ Tự Tab (Admin) -->
+    <div id="cover-tabs-modal" class="fixed inset-0 z-50 hidden bg-stone-950/65 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg max-h-[92vh] rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-amber-200">
+            <div class="bg-crimson-900 text-white px-5 py-4 flex items-center justify-between shrink-0">
+                <div>
+                    <h3 class="font-serif font-bold text-base">Cấu Hình Ảnh Bìa & Thanh Tab</h3>
+                    <p class="text-[11px] text-amber-200/90">Thêm/xóa dòng chữ bìa, đổi thứ tự & tên các Tab</p>
+                </div>
+                <button onclick="closeModal('cover-tabs-modal')" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <div id="cover-tabs-modal-body" class="p-4 sm:p-5 overflow-y-auto space-y-5 text-sm flex-1">
+                <!-- Render bằng JS -->
+            </div>
+
+            <div class="p-4 border-t border-stone-200 bg-stone-50 flex justify-end gap-2 shrink-0">
+                <button type="button" onclick="closeModal('cover-tabs-modal')" class="px-4 py-2.5 rounded-xl bg-stone-200 text-stone-700 font-semibold">Đóng</button>
+                <button type="button" onclick="saveCoverAndTabsConfig()" class="px-5 py-2.5 rounded-xl bg-crimson-800 text-white font-semibold shadow-md">Lưu toàn bộ</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3B. Modal Chỉnh Sửa Nhanh Một Dòng Chữ Bất Kỳ (Inline Edit) -->
+    <div id="inline-text-modal" class="fixed inset-0 z-[55] hidden bg-stone-950/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl overflow-hidden border border-amber-200 p-5 space-y-4">
+            <div class="flex items-center justify-between border-b border-amber-100 pb-2.5">
+                <h3 id="inline-modal-title" class="font-serif font-bold text-base text-crimson-900">Chỉnh Sửa Nội Dung</h3>
+                <button onclick="closeModal('inline-text-modal')" class="p-1 rounded-full hover:bg-stone-100">
+                    <i data-lucide="x" class="w-5 h-5 text-stone-500"></i>
+                </button>
+            </div>
+            <form onsubmit="saveInlineText(event)" class="space-y-4">
+                <input type="hidden" id="inline-target-key">
+                <div>
+                    <label id="inline-field-label" class="block text-xs font-semibold text-stone-600 mb-1.5">Nhập nội dung mới:</label>
+                    <textarea id="inline-text-input" rows="3" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 focus:border-crimson-800 outline-none text-sm font-medium"></textarea>
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" onclick="closeModal('inline-text-modal')" class="px-4 py-2 rounded-xl bg-stone-100 text-stone-700 text-sm font-semibold">Hủy</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl bg-crimson-800 text-white text-sm font-semibold shadow">Cập nhật</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 3C. Modal Thêm / Sửa Mục Truyền Thống Dòng Họ -->
+    <div id="tradition-form-modal" class="fixed inset-0 z-50 hidden bg-stone-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-amber-200">
+            <div class="bg-crimson-900 text-white px-5 py-4 flex items-center justify-between">
+                <h3 id="tradition-modal-title" class="font-serif font-bold text-base">Chỉnh Sửa Mục Truyền Thống</h3>
+                <button onclick="closeModal('tradition-form-modal')" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form onsubmit="saveTraditionForm(event)" class="p-5 space-y-4 text-sm">
+                <input type="hidden" id="tradition-id">
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Biểu tượng mục</label>
+                    <select id="tradition-icon" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white outline-none">
+                        <option value="landmark">Đình / Nguồn gốc</option>
+                        <option value="scroll">Cuốn thư / Gia quy</option>
+                        <option value="book-check">Tộc ước / Quy định</option>
+                        <option value="home">Từ đường / Nhà thờ họ</option>
+                        <option value="award">Truyền thống hiếu học</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Tiêu đề mục</label>
+                    <input type="text" id="tradition-title" required placeholder="VD: Tộc Ước Dòng Họ" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Nội dung chi tiết</label>
+                    <textarea id="tradition-content" rows="5" required placeholder="Nhập nội dung chi tiết..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('tradition-form-modal')" class="px-4 py-2.5 rounded-xl bg-stone-100 text-stone-700 font-semibold">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-crimson-800 text-white font-semibold shadow">Lưu mục này</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4. Modal Thêm / Sửa Sự Kiện & Tin Tức -->
+    <div id="event-form-modal" class="fixed inset-0 z-50 hidden bg-stone-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-amber-200">
+            <div class="bg-crimson-900 text-white px-5 py-4 flex items-center justify-between">
+                <h3 id="event-modal-title" class="font-serif font-bold text-base">Thêm Lịch Giỗ / Tin Tức Mới</h3>
+                <button onclick="closeModal('event-form-modal')" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="event-form" onsubmit="saveEventForm(event)" class="p-5 space-y-4 text-sm">
+                <input type="hidden" id="event-id">
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Phân loại</label>
+                    <select id="event-type" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white outline-none">
+                        <option value="memorial">Lịch Giỗ Chạp / Lễ Tổ</option>
+                        <option value="gathering">Họp Họ / Sự Kiện Chung</option>
+                        <option value="honor">Vinh Danh / Quỹ Khuyến Học</option>
+                        <option value="news">Tin Gia Tộc (Cưới hỏi / Tin vui)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Tiêu đề</label>
+                    <input type="text" id="event-title" required placeholder="VD: Lễ Giỗ Thủy Tổ Võ Văn An" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Thời gian (Âm lịch / Dương lịch)</label>
+                    <input type="text" id="event-date" required placeholder="VD: Ngày 15/03 Âm lịch hàng năm" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Nội dung chi tiết</label>
+                    <textarea id="event-desc" rows="3" placeholder="Địa điểm tổ chức, nội dung chương trình..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('event-form-modal')" class="px-4 py-2.5 rounded-xl bg-stone-100 text-stone-700 font-semibold">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-crimson-800 text-white font-semibold shadow">Lưu thông tin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 4B. Modal Thêm / Sửa Tư Liệu / Văn Khấn / Ảnh -->
+    <div id="gallery-form-modal" class="fixed inset-0 z-50 hidden bg-stone-950/60 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4">
+        <div class="bg-white w-full max-w-lg rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col border border-amber-200">
+            <div class="bg-crimson-900 text-white px-5 py-4 flex items-center justify-between">
+                <h3 id="gallery-modal-title" class="font-serif font-bold text-base">Thêm / Sửa Tư Liệu Dòng Họ</h3>
+                <button onclick="closeModal('gallery-form-modal')" class="p-1.5 rounded-full bg-white/10 hover:bg-white/20">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="gallery-form" onsubmit="saveGalleryForm(event)" class="p-5 space-y-4 text-sm">
+                <input type="hidden" id="gallery-id">
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Loại tư liệu</label>
+                    <select id="gallery-category" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 bg-white outline-none">
+                        <option value="photo">Ảnh kỷ niệm / Từ đường</option>
+                        <option value="document">Tài liệu cổ / Sắc phong / Gia phả gốc</option>
+                        <option value="prayer">Bài Văn Khấn Cổ Truyền</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Tiêu đề tư liệu</label>
+                    <input type="text" id="gallery-title" required placeholder="VD: Bài Văn Khấn Giỗ Tổ Họ Võ" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Năm / Thời điểm lưu trữ</label>
+                    <input type="text" id="gallery-date" placeholder="VD: 2026" class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 outline-none">
+                </div>
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Hình ảnh đính kèm (Tùy chọn)</label>
+                    <div class="flex items-center gap-3">
+                        <img id="gallery-img-preview" src="https://placehold.co/300x200/f2dfc2/7c2d12?text=Tu+Lieu" class="w-24 h-16 rounded-xl object-cover border border-amber-300">
+                        <label for="gallery-file-input" class="px-3.5 py-2 rounded-xl bg-amber-100 text-amber-950 font-semibold text-xs cursor-pointer hover:bg-amber-200 flex items-center gap-1.5">
+                            <i data-lucide="upload" class="w-4 h-4"></i> Chọn ảnh từ máy
+                        </label>
+                        <input type="file" id="gallery-file-input" accept="image/*" class="hidden" onchange="handleImageUpload(event, 'gallery-img-preview', 'gallery-img-data', 800)">
+                    </div>
+                    <input type="hidden" id="gallery-img-data">
+                </div>
+                <div>
+                    <label class="block font-semibold text-stone-700 mb-1">Nội dung văn bản / Lời văn khấn / Ghi chú</label>
+                    <textarea id="gallery-note" rows="4" placeholder="Nhập nội dung bài văn khấn hoặc mô tả chi tiết tư liệu..." class="w-full px-3.5 py-2.5 rounded-xl border border-stone-300 outline-none"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeModal('gallery-form-modal')" class="px-4 py-2.5 rounded-xl bg-stone-100 text-stone-700 font-semibold">Hủy</button>
+                    <button type="submit" class="px-5 py-2.5 rounded-xl bg-crimson-800 text-white font-semibold shadow">Lưu tư liệu</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 5. Modal Đăng Nhập Chủ Website (Admin) -->
+    <div id="admin-login-modal" class="fixed inset-0 z-50 hidden bg-stone-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden border border-amber-200 p-6 space-y-4">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-amber-100 text-crimson-800 rounded-2xl flex items-center justify-center mx-auto shadow-inner">
+                    <i data-lucide="lock-keyhole" class="w-7 h-7"></i>
+                </div>
+                <h3 class="font-serif font-bold text-lg text-stone-900">Xác Thực Chủ Website</h3>
+                <p class="text-xs text-stone-500">Chỉ Chủ Website mới có quyền thêm, sửa, xóa dữ liệu và cấu hình gia phả.</p>
+            </div>
+            <form onsubmit="handleAdminLogin(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1">Nhập mã PIN quản trị</label>
+                    <input type="password" id="admin-pin-input" required placeholder="••••••" class="w-full px-4 py-3 text-center text-lg tracking-widest font-bold rounded-xl border border-stone-300 focus:border-crimson-800 outline-none">
+                    <p class="text-[11px] text-amber-700 mt-1.5 text-center bg-amber-50 py-1 px-2 rounded-lg">Mã PIN mặc định ban đầu: <b>123456</b></p>
+                </div>
+                <div class="flex gap-2">
+                    <button type="button" onclick="closeModal('admin-login-modal')" class="flex-1 py-2.5 rounded-xl bg-stone-100 text-stone-700 font-semibold text-sm">Đóng</button>
+                    <button type="submit" class="flex-1 py-2.5 rounded-xl bg-crimson-800 text-white font-semibold text-sm shadow-md">Mở khóa</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 6. Modal Hộp Thoại Xác Nhận Tùy Chỉnh -->
+    <div id="confirm-modal" class="fixed inset-0 z-[60] hidden bg-stone-950/70 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-xs rounded-3xl shadow-2xl p-5 space-y-4 border border-amber-200">
+            <div class="flex items-center gap-3 text-crimson-800">
+                <i data-lucide="alert-triangle" class="w-6 h-6 shrink-0"></i>
+                <h4 id="confirm-title" class="font-bold text-base text-stone-900">Xác nhận</h4>
+            </div>
+            <p id="confirm-message" class="text-sm text-stone-600 leading-relaxed"></p>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="closeModal('confirm-modal')" class="px-4 py-2 rounded-xl bg-stone-100 text-stone-700 text-sm font-semibold">Hủy</button>
+                <button id="confirm-yes-btn" class="px-4 py-2 rounded-xl bg-crimson-800 text-white text-sm font-semibold shadow">Đồng ý</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Thông Báo Nhanh -->
+    <div id="toast" class="fixed top-12 left-1/2 -translate-x-1/2 z-[70] hidden bg-stone-900/95 text-white px-4 py-2.5 rounded-full text-xs font-medium shadow-xl flex items-center gap-2 backdrop-blur-md transition-all">
+        <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
+        <span id="toast-msg">Đã lưu thành công</span>
+    </div>
+
+    <script>
+        // ==================== DỮ LIỆU MẪU CHUẨN HỌ VÕ & ĐẦY ĐỦ TRƯỜNG MỞ RỘNG ====================
+        const DEFAULT_DATA = {
+            adminPin: '123456',
+            tabs: [
+                { id: 'tree', label: 'Cây Gia Phả', icon: 'git-fork' },
+                { id: 'lineage', label: 'Dòng Họ', icon: 'scroll-text' },
+                { id: 'events', label: 'Lịch & Tin', icon: 'calendar-heart' },
+                { id: 'archive', label: 'Tư Liệu & Cài Đặt', icon: 'images' }
+            ],
+            coverConfig: {
+                banner: 'https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=1000&q=80',
+                yearBadge: 'Lập phả năm Bính Ngọ 2026',
+                showStats: true,
+                lines: [
+                    { id: 'cl_1', text: 'PHẢ HỆ TRUYỀN THỐNG', style: 'badge' },
+                    { id: 'cl_2', text: 'GIA PHẢ HỌ VÕ', style: 'title' },
+                    { id: 'cl_3', text: 'Làng An Hòa • Xã Bình Minh • Quảng Nam', style: 'subtitle' },
+                    { id: 'cl_4', text: '“Tổ tông công đức thiên niên thịnh – Tử hiếu tôn hiền vạn đại vinh”', style: 'motto' }
+                ]
+            },
+            uiLabels: {
+                statGenLabel: 'Số Đời',
+                statMemberLabel: 'Thành Viên',
+                statBranchLabel: 'Chi / Nhánh',
+                historyTabTitle: 'Truyền Thống Dòng Họ',
+                historyTabSubtitle: 'Cội nguồn, gia quy, tộc ước và từ đường dòng họ',
+                eventsTabTitle: 'Lịch Giỗ & Bảng Tin',
+                eventsTabSubtitle: 'Sự kiện gia tộc, quỹ khuyến học và ngày giỗ các cụ',
+                galleryTabTitle: 'Thư Viện Tư Liệu',
+                galleryTabSubtitle: 'Hình ảnh kỷ niệm, văn khấn & di sản dòng họ',
+                adminContactTitle: 'Ban Quản Trị Dòng Họ',
+                adminContactInfo: 'Trưởng tộc: Ông Võ Văn Hùng • Điện thoại: 0905.xxx.xxx\nThư ký gia phả: Anh Võ Hoàng Nam • Email: giapha.hovo@gmail.com'
+            },
+            traditions: [
+                {
+                    id: 'tr_1',
+                    icon: 'landmark',
+                    title: 'Lịch Sử & Nguồn Gốc Dòng Họ Võ',
+                    content: 'Dòng họ Võ khởi thủy từ vùng đất Quảng Nam, đến đời Thủy tổ Võ Văn An đã khai khẩn điền trang, lập nên cơ nghiệp vững bền. Trải qua bao thế hệ, con cháu luôn đoàn kết, cần cù lao động, giữ vững nề nếp gia phong và đóng góp nhiều công sức cho quê hương đất nước.'
+                },
+                {
+                    id: 'tr_2',
+                    icon: 'scroll',
+                    title: 'Gia Quy & Gia Huấn',
+                    content: '1. Kính trên nhường dưới, hiếu thảo với ông bà cha mẹ, hòa thuận với anh em họ hàng.\n2. Giữ gìn truyền thống hiếu học, khuyến khích con cháu rèn đức luyện tài.\n3. Hàng năm đến ngày Giỗ Tổ (15/3 Âm lịch), con cháu dù ở xa hay gần đều cố gắng tề tựu về Từ đường thắp hương tưởng nhớ tiên tổ.\n4. Tương thân tương ái, giúp đỡ nhau lúc khó khăn hoạn nạn.'
+                },
+                {
+                    id: 'tr_3',
+                    icon: 'book-check',
+                    title: 'Tộc Ước Dòng Họ',
+                    content: '• Mỗi gia đình thành viên đóng góp quỹ họ hàng năm để duy tu Từ đường và tổ chức lễ Giỗ Tổ.\n• Quỹ Khuyến học khen thưởng các cháu đạt danh hiệu Học sinh Giỏi các cấp, đỗ Đại học và đạt học vị Thạc sĩ, Tiến sĩ.\n• Mọi việc hiếu hỷ trong họ đều có Ban khánh tiết đại diện dòng họ thăm hỏi, chung vui.'
+                },
+                {
+                    id: 'tr_4',
+                    icon: 'home',
+                    title: 'Nhà Thờ Họ / Từ Đường',
+                    content: 'Nhà thờ họ Võ tọa lạc tại quê nhà Làng An Hòa, được trùng tu khang trang nhờ sự đóng góp công đức của toàn thể con cháu nội ngoại. Đây là nơi lưu giữ long ngai bài vị Thủy tổ và sắc phong của dòng họ.'
+                }
+            ],
+            members: [
+                {
+                    id: 'm1',
+                    name: 'Võ Văn An',
+                    alias: 'Thủy Tổ - Hiệu Phúc Tâm',
+                    gender: 'male',
+                    generation: 1,
+                    relationType: 'Gốc',
+                    order: 'Thủy tổ',
+                    parentId: '',
+                    branch: 'Gốc',
+                    spouse: 'Trần Thị Nhàn (1892 - 1970)',
+                    birthplace: 'Làng An Hòa, Bình Minh, Quảng Nam',
+                    hometown: 'Xã Bình Minh, Huyện Thăng Bình, Quảng Nam',
+                    ethnicity: 'Kinh',
+                    religion: 'Không',
+                    address: 'Xã Bình Minh, Huyện Thăng Bình, Quảng Nam',
+                    birth: '1888',
+                    status: 'deceased',
+                    deathDate: '1965',
+                    death: '15/03 Âm lịch',
+                    burial: 'Khu lăng mộ Tổ dòng họ Võ, Gò Đồi An Hòa',
+                    burialMap: '',
+                    job: 'Nho học, Khai khẩn điền trang',
+                    phone: '',
+                    bio: 'Ngài là người đặt nền móng lập nghiệp cho dòng họ tại vùng đất mới, nổi tiếng đức độ, hay giúp đỡ dân làng.',
+                    avatar: 'https://placehold.co/200x200/7c2d12/fde68a?text=Cụ+An'
+                },
+                {
+                    id: 'm2',
+                    name: 'Võ Văn Minh',
+                    alias: 'Tự Quang Minh',
+                    gender: 'male',
+                    generation: 2,
+                    relationType: 'Gốc',
+                    order: 'Trưởng nam',
+                    parentId: 'm1',
+                    branch: 'Chi Trưởng',
+                    spouse: 'Lê Thị Hoa (1922 - 2005)',
+                    birthplace: 'Xã Bình Minh, Thăng Bình, Quảng Nam',
+                    hometown: 'Xã Bình Minh, Huyện Thăng Bình, Quảng Nam',
+                    ethnicity: 'Kinh',
+                    religion: 'Phật giáo',
+                    address: 'Hòa Vang, TP. Đà Nẵng',
+                    birth: '12/04/1918',
+                    status: 'deceased',
+                    deathDate: '1998',
+                    death: '08/09 Âm lịch',
+                    burial: 'Nghĩa trang Gia tộc An Hòa',
+                    burialMap: '',
+                    job: 'Thầy giáo làng',
+                    phone: '',
+                    bio: 'Cả đời tận tụy với sự nghiệp trồng người, đào tạo nhiều thế hệ học trò thành đạt trong vùng.',
+                    avatar: 'https://placehold.co/200x200/991b1b/fef3c7?text=Ông+Minh'
+                },
+                {
+                    id: 'm3',
+                    name: 'Võ Văn Đức',
+                    alias: 'Tự Thành Đức',
+                    gender: 'male',
+                    generation: 2,
+                    relationType: 'Gốc',
+                    order: 'Thứ nam',
+                    parentId: 'm1',
+                    branch: 'Chi Hai',
+                    spouse: 'Phạm Thị Lan (1926 - 2012)',
+                    birthplace: 'Xã Bình Minh, Thăng Bình, Quảng Nam',
+                    hometown: 'Xã Bình Minh, Huyện Thăng Bình, Quảng Nam',
+                    ethnicity: 'Kinh',
+                    religion: 'Không',
+                    address: 'Quận Hải Châu, TP. Đà Nẵng',
+                    birth: '20/08/1923',
+                    status: 'deceased',
+                    deathDate: '2004',
+                    death: '22/11 Âm lịch',
+                    burial: 'Nghĩa trang Gia tộc An Hòa',
+                    burialMap: '',
+                    job: 'Lương y Y học cổ truyền',
+                    phone: '',
+                    bio: 'Bốc thuốc cứu người không màng danh lợi, để lại nhiều bài thuốc quý cho con cháu.',
+                    avatar: 'https://placehold.co/200x200/854d0e/fef9c3?text=Ông+Đức'
+                },
+                {
+                    id: 'm4',
+                    name: 'Võ Văn Hùng',
+                    alias: 'Trưởng tộc đương nhiệm',
+                    gender: 'male',
+                    generation: 3,
+                    relationType: 'Gốc',
+                    order: 'Trưởng nam',
+                    parentId: 'm2',
+                    branch: 'Chi Trưởng',
+                    spouse: 'Đặng Thị Mai (Sinh năm 1954)',
+                    birthplace: 'Hòa Vang, Đà Nẵng',
+                    hometown: 'Xã Bình Minh, Huyện Thăng Bình, Quảng Nam',
+                    ethnicity: 'Kinh',
+                    religion: 'Không',
+                    address: 'Hòa Vang, TP. Đà Nẵng',
+                    birth: '05/02/1950',
+                    status: 'alive',
+                    deathDate: '',
+                    death: '',
+                    burial: '',
+                    burialMap: '',
+                    job: 'Kỹ sư Xây dựng (Đã nghỉ hưu)',
+                    phone: '0905.xxx.xxx',
+                    bio: 'Người khởi xướng việc số hóa gia phả dòng họ và chủ trì công tác trùng tu Nhà thờ họ.',
+                    avatar: 'https://placehold.co/200x200/b45309/ffffff?text=Bác+Hùng'
+                },
+                {
+                    id: 'm5',
+                    name: 'Võ Thị Hương',
+                    alias: '',
+                    gender: 'female',
+                    generation: 3,
+                    relationType: 'Gốc',
+                    order: 'Thứ nữ',
+                    parentId: 'm2',
+                    branch: 'Chi Trưởng',
+                    spouse: 'Nguyễn Văn Thành (Sinh năm 1953)',
+                    birthplace: 'Hòa Vang, Đà Nẵng',
+                    hometown: 'Xã Bình Minh, Huyện Thăng Bình, Quảng Nam',
+                    ethnicity: 'Kinh',
+                    religion: 'Phật giáo',
+                    address: 'Quận 3, TP. Hồ Chí Minh',
+                    birth: '19/10/1956',
+                    status: 'alive',
+                    deathDate: '',
+                    death: '',
+                    burial: '',
+                    burialMap: '',
+                    job: 'Giảng viên Đại học',
+                    phone: '',
+                    bio: 'Luôn hướng về cội nguồn, đóng góp tích cực vào Quỹ Khuyến học của dòng họ.',
+                    avatar: 'https://placehold.co/200x200/be185d/ffffff?text=Cô+Hương'
+                },
+                {
+                    id: 'm6',
+                    name: 'Võ Hoàng Nam',
+                    alias: '',
+                    gender: 'male',
+                    generation: 4,
+                    relationType: 'Gốc',
+                    order: 'Trưởng tôn',
+                    parentId: 'm4',
+                    branch: 'Chi Trưởng',
+                    spouse: 'Trịnh Ngọc Ánh (Sinh năm 1986)',
+                    birthplace: 'Quận Hải Châu, Đà Nẵng',
+                    hometown: 'Xã Bình Minh, Huyện Thăng Bình, Quảng Nam',
+                    ethnicity: 'Kinh',
+                    religion: 'Không',
+                    address: 'Quận Cẩm Lệ, TP. Đà Nẵng',
+                    birth: '22/09/1984',
+                    status: 'alive',
+                    deathDate: '',
+                    death: '',
+                    burial: '',
+                    burialMap: '',
+                    job: 'Kiến trúc sư',
+                    phone: '',
+                    bio: 'Tham gia thiết kế Nhà thờ họ và quản lý kỹ thuật website gia phả dòng họ.',
+                    avatar: 'https://placehold.co/200x200/047857/ffffff?text=Anh+Nam'
+                }
+            ],
+            events: [
+                {
+                    id: 'e1',
+                    type: 'memorial',
+                    title: 'Lễ Giỗ Thủy Tổ Võ Văn An',
+                    date: 'Ngày 15/03 Âm lịch hàng năm',
+                    desc: 'Tổ chức trang trọng tại Từ đường họ Võ. Con cháu tập trung từ 8h00 sáng để dâng hương và thụ lộc.'
+                },
+                {
+                    id: 'e2',
+                    type: 'gathering',
+                    title: 'Họp Mặt Họ Võ & Trao Quỹ Khuyến Học',
+                    date: 'Mùng 4 Tết Nguyên Đán',
+                    desc: 'Chúc thọ các bậc cao niên và trao phần thưởng cho các cháu học sinh giỏi, đỗ Đại học trong năm.'
+                }
+            ],
+            gallery: [
+                {
+                    id: 'g1',
+                    category: 'photo',
+                    title: 'Toàn cảnh Từ đường họ Võ ngày khánh thành',
+                    date: '2024',
+                    url: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?auto=format&fit=crop&w=800&q=80',
+                    note: 'Lễ khánh thành Từ đường sau đợt đại trùng tu với sự tham dự của đông đủ con cháu các chi.'
+                },
+                {
+                    id: 'g2',
+                    category: 'prayer',
+                    title: 'Bài Văn Khấn Lễ Giỗ Tổ Truyền Thống',
+                    date: 'Lưu truyền',
+                    url: '',
+                    note: 'Nam mô A Di Đà Phật! (3 lần)\nKính lạy Hoàng Thiên Hậu Thổ chư vị Tôn thần.\nKính lạy Ngài Thủy Tổ họ Võ cùng chư vị Tiên linh, Cao Tằng Tổ Khảo, Cao Tằng Tổ Tỷ...\nHôm nay là ngày... tháng... năm..., toàn thể con cháu nội ngoại tề tựu trước Từ đường, thành tâm dâng lễ vật hương hoa kính dâng Tiên tổ...'
+                }
+            ]
+        };
+
+        // ==================== QUẢN LÝ TRẠNG THÁI ỨNG DỤNG ====================
+        let appData = {};
+        let isAdmin = false;
+        let currentTab = 'tree';
+        let selectedMemberId = null;
+        let searchQuery = '';
+        let filterGen = 'all';
+        let treeZoom = 1;
+
+        // Biến tạm khi chỉnh sửa Cấu hình Bìa & Tabs trong Modal
+        let tempCoverConfig = null;
+        let tempTabs = null;
+
+        function initApp() {
+            const saved = localStorage.getItem('giapha_viet_data_v2');
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    appData = {
+                        ...JSON.parse(JSON.stringify(DEFAULT_DATA)),
+                        ...parsed,
+                        tabs: (parsed.tabs && parsed.tabs.length === 4) ? parsed.tabs : JSON.parse(JSON.stringify(DEFAULT_DATA.tabs)),
+                        coverConfig: {
+                            ...DEFAULT_DATA.coverConfig,
+                            ...(parsed.coverConfig || {}),
+                            lines: (parsed.coverConfig && Array.isArray(parsed.coverConfig.lines)) ? parsed.coverConfig.lines : JSON.parse(JSON.stringify(DEFAULT_DATA.coverConfig.lines))
+                        },
+                        uiLabels: { ...DEFAULT_DATA.uiLabels, ...(parsed.uiLabels || {}) },
+                        traditions: parsed.traditions || JSON.parse(JSON.stringify(DEFAULT_DATA.traditions))
+                    };
+                } catch (e) {
+                    appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                }
+            } else {
+                appData = JSON.parse(JSON.stringify(DEFAULT_DATA));
+                saveData();
+            }
+
+            isAdmin = sessionStorage.getItem('giapha_is_admin') === 'true';
+            // Tab đầu tiên trong danh sách thứ tự sẽ là tab mở mặc định
+            if (appData.tabs && appData.tabs.length > 0) {
+                currentTab = appData.tabs[0].id;
+            }
+            renderBottomNav();
+            updateAdminUI();
+            renderCurrentTab();
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem('giapha_viet_data_v2', JSON.stringify(appData));
+                renderBottomNav();
+            } catch (e) {
+                showToast('Bộ nhớ trình duyệt đầy! Hãy xuất file JSON dự phòng và dùng ảnh nhẹ hơn.', true);
+            }
+        }
+
+        // ==================== THANH ĐIỀU HƯỚNG DƯỚI ĐÁY (ĐỘNG THEO THỨ TỰ) ====================
+        function renderBottomNav() {
+            const nav = document.getElementById('bottom-nav');
+            if (!nav || !appData.tabs) return;
+            nav.innerHTML = `
+                <div class="grid grid-cols-4 h-16">
+                    ${appData.tabs.map(t => {
+                        const isActive = currentTab === t.id;
+                        return `
+                            <button onclick="switchTab('${t.id}')" class="nav-btn flex flex-col items-center justify-center gap-1 px-1 transition relative ${isActive ? 'text-crimson-800 font-semibold' : 'text-stone-500 hover:text-amber-800 font-medium'}">
+                                <i data-lucide="${t.icon}" class="w-5 h-5"></i>
+                                <span class="text-[11px] truncate max-w-full">${t.label}</span>
+                                <span class="nav-indicator ${isActive ? '' : 'hidden'} absolute top-0 w-8 h-0.5 bg-crimson-800 rounded-b-full"></span>
+                            </button>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function switchTab(tabId) {
+            currentTab = tabId;
+            renderBottomNav();
+            updateAdminUI();
+            renderCurrentTab();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==================== CHỈNH SỬA TRỰC TIẾP VĂN BẢN (INLINE EDIT) ====================
+        function openInlineEdit(key, label, currentVal) {
+            if (!isAdmin) return;
+            document.getElementById('inline-target-key').value = key;
+            document.getElementById('inline-modal-title').textContent = 'Sửa: ' + label;
+            document.getElementById('inline-field-label').textContent = label;
+            document.getElementById('inline-text-input').value = currentVal || '';
+            openModal('inline-text-modal');
+            setTimeout(() => document.getElementById('inline-text-input').focus(), 100);
+        }
+
+        function saveInlineText(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+            const key = document.getElementById('inline-target-key').value;
+            const val = document.getElementById('inline-text-input').value.trim();
+            const parts = key.split('.');
+            if (parts.length === 2 && appData[parts[0]]) {
+                appData[parts[0]][parts[1]] = val;
+                saveData();
+                closeModal('inline-text-modal');
+                renderCurrentTab();
+                showToast('Đã cập nhật nội dung!');
+            }
+        }
+
+        function editableTextHtml(key, label, text, extraClasses = '', tag = 'span') {
+            const safeText = (text || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            if (!isAdmin) {
+                return `<${tag} class="${extraClasses}">${safeText}</${tag}>`;
+            }
+            const encodedVal = encodeURIComponent(text || '');
+            return `<${tag} onclick="event.stopPropagation(); openInlineEdit('${key}', '${label}', decodeURIComponent('${encodedVal}'))" title="Chạm để sửa ${label}" class="${extraClasses} cursor-pointer border-b border-dashed border-amber-400/80 hover:bg-amber-400/20 rounded px-1 transition inline-flex items-center gap-1 group">
+                <span>${safeText}</span>
+                <i data-lucide="pencil" class="w-3 h-3 text-amber-500 opacity-80 group-hover:opacity-100 shrink-0 inline"></i>
+            </${tag}>`;
+        }
+
+        // ==================== PHÂN QUYỀN CHỦ WEBSITE (ADMIN) ====================
+        function openAdminLogin() {
+            document.getElementById('admin-pin-input').value = '';
+            openModal('admin-login-modal');
+            setTimeout(() => document.getElementById('admin-pin-input').focus(), 100);
+        }
+
+        function handleAdminLogin(e) {
+            e.preventDefault();
+            const pin = document.getElementById('admin-pin-input').value.trim();
+            if (pin === appData.adminPin) {
+                isAdmin = true;
+                sessionStorage.setItem('giapha_is_admin', 'true');
+                closeModal('admin-login-modal');
+                updateAdminUI();
+                renderCurrentTab();
+                showToast('Đã mở khóa quyền Chủ Website!');
+            } else {
+                showToast('Mã PIN không chính xác!', true);
+            }
+        }
+
+        function logoutAdmin() {
+            isAdmin = false;
+            sessionStorage.removeItem('giapha_is_admin');
+            updateAdminUI();
+            renderCurrentTab();
+            showToast('Đã chuyển về chế độ Xem (Viewer)');
+        }
+
+        function updateAdminUI() {
+            const banner = document.getElementById('admin-banner');
+            const fab = document.getElementById('fab-add-member');
+            if (isAdmin) {
+                banner.classList.remove('hidden');
+                if (currentTab === 'tree') fab.classList.remove('hidden');
+                else fab.classList.add('hidden');
+            } else {
+                banner.classList.add('hidden');
+                fab.classList.add('hidden');
+            }
+        }
+
+        function changeAdminPin(e) {
+            e.preventDefault();
+            const oldPin = document.getElementById('old-pin').value;
+            const newPin = document.getElementById('new-pin').value;
+            if (oldPin !== appData.adminPin) {
+                showToast('Mã PIN cũ không đúng!', true);
+                return;
+            }
+            if (newPin.length < 4) {
+                showToast('Mã PIN mới phải từ 4 ký tự trở lên!', true);
+                return;
+            }
+            appData.adminPin = newPin;
+            saveData();
+            document.getElementById('old-pin').value = '';
+            document.getElementById('new-pin').value = '';
+            showToast('Đổi mã PIN quản trị thành công!');
+        }
+
+        function renderCurrentTab() {
+            const main = document.getElementById('main-content');
+            if (currentTab === 'tree') {
+                main.innerHTML = renderTreeTab();
+            } else if (currentTab === 'lineage') {
+                main.innerHTML = renderHistoryTab();
+            } else if (currentTab === 'events') {
+                main.innerHTML = renderEventsTab();
+            } else if (currentTab === 'archive') {
+                main.innerHTML = renderGallerySettingsTab();
+            }
+            lucide.createIcons();
+        }
+
+        // ==================== TAB 1: CÂY GIA PHẢ & ẢNH BÌA TÙY BIẾN ĐỘNG ====================
+        function renderCoverLineHtml(line) {
+            if (!line || !line.text || !line.text.trim()) return '';
+            const safe = line.text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            if (line.style === 'badge') {
+                return `<div><span class="inline-block px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-[10px] uppercase tracking-widest backdrop-blur-xs">${safe}</span></div>`;
+            }
+            if (line.style === 'title') {
+                return `<h1 class="font-serif font-bold text-xl sm:text-2xl text-amber-100 drop-shadow-md tracking-wide">${safe}</h1>`;
+            }
+            if (line.style === 'subtitle') {
+                return `<div class="text-xs font-medium text-amber-300/95 drop-shadow">${safe}</div>`;
+            }
+            if (line.style === 'motto') {
+                return `<p class="font-serif italic text-xs text-amber-200/90 px-2 drop-shadow">${safe}</p>`;
+            }
+            return `<div class="text-xs text-amber-100/90">${safe}</div>`;
+        }
+
+        function renderTreeTab() {
+            const maxGen = Math.max(...appData.members.map(m => Number(m.generation) || 1), 1);
+            const totalMembers = appData.members.length;
+            const branches = [...new Set(appData.members.map(m => m.branch).filter(Boolean))];
+            const cc = appData.coverConfig;
+            const ul = appData.uiLabels;
+
+            // Lọc thành viên theo tên, quê quán, tên tự, vợ/chồng
+            let filteredMembers = appData.members.filter(m => {
+                const q = searchQuery.toLowerCase();
+                const matchSearch = !q ||
+                    (m.name && m.name.toLowerCase().includes(q)) ||
+                    (m.alias && m.alias.toLowerCase().includes(q)) ||
+                    (m.hometown && m.hometown.toLowerCase().includes(q)) ||
+                    (m.address && m.address.toLowerCase().includes(q)) ||
+                    (m.spouse && m.spouse.toLowerCase().includes(q));
+                const matchGen = filterGen === 'all' || String(m.generation) === String(filterGen);
+                return matchSearch && matchGen;
+            });
+
+            // Nhóm theo Đời
+            const generations = {};
+            filteredMembers.forEach(m => {
+                const g = m.generation || 1;
+                if (!generations[g]) generations[g] = [];
+                generations[g].push(m);
+            });
+            const sortedGens = Object.keys(generations).sort((a, b) => Number(a) - Number(b));
+
+            const hasLines = cc.lines && cc.lines.some(l => l.text && l.text.trim());
+
+            return `
+                <!-- Header Ảnh Bìa Dòng Họ -->
+                <div class="relative">
+                    <div class="min-h-[13.5rem] sm:min-h-[15.5rem] w-full overflow-hidden relative bg-cover-ornament flex flex-col justify-between">
+                        ${cc.banner ? `
+                            <img src="${cc.banner}" onerror="this.style.display='none'" alt="Ảnh bìa" class="absolute inset-0 w-full h-full object-cover opacity-85">
+                            <div class="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/40 to-stone-950/25"></div>
+                        ` : `
+                            <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#fbbf24 1px, transparent 1px); background-size: 20px 20px;"></div>
+                        `}
+                        
+                        <!-- Thanh nút góc trên ảnh bìa -->
+                        <div class="relative z-10 p-3 flex items-center justify-between gap-2">
+                            ${cc.yearBadge && cc.yearBadge.trim() ? `
+                                <div class="bg-stone-950/60 backdrop-blur-xs text-amber-200/95 px-2.5 py-1 rounded-full text-[10px] border border-amber-400/25">
+                                    ${editableTextHtml('coverConfig.yearBadge', 'Nhãn năm lập phả', cc.yearBadge)}
+                                </div>
+                            ` : '<div></div>'}
+
+                            ${isAdmin ? `
+                                <button onclick="openCoverAndTabsModal()" class="bg-amber-500 text-stone-950 px-3 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5 hover:bg-amber-400 transition shrink-0">
+                                    <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> Sửa bìa & đầu trang
+                                </button>
+                            ` : `
+                                <button onclick="openAdminLogin()" class="bg-stone-900/75 backdrop-blur-md text-amber-200 border border-amber-400/30 px-3 py-1.5 rounded-full text-[11px] font-medium flex items-center gap-1.5 hover:bg-stone-900 transition shrink-0">
+                                    <i data-lucide="lock" class="w-3 h-3 text-amber-400"></i> Quản trị
+                                </button>
+                            `}
+                        </div>
+
+                        <!-- Danh sách các dòng chữ động trên ảnh bìa (Có thể xóa hết nếu ảnh bìa đã có sẵn chữ) -->
+                        <div class="relative z-10 px-4 pb-5 pt-6 text-center space-y-1.5">
+                            ${hasLines ? cc.lines.map(line => renderCoverLineHtml(line)).join('') : '<div class="h-10"></div>'}
+                        </div>
+                    </div>
+
+                    <!-- Thẻ thống kê nhanh (Có thể ẩn/hiện trong cấu hình bìa) -->
+                    ${cc.showStats !== false ? `
+                        <div class="px-4 -mt-3 relative z-10">
+                            <div class="bg-white rounded-2xl shadow-md border border-amber-200/80 p-3 grid grid-cols-3 divide-x divide-amber-100 text-center">
+                                <div>
+                                    <div class="text-lg font-bold text-crimson-800">${maxGen}</div>
+                                    <div class="text-[11px] text-stone-500 font-medium">
+                                        ${editableTextHtml('uiLabels.statGenLabel', 'Nhãn thống kê 1', ul.statGenLabel)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-lg font-bold text-amber-700">${totalMembers}</div>
+                                    <div class="text-[11px] text-stone-500 font-medium">
+                                        ${editableTextHtml('uiLabels.statMemberLabel', 'Nhãn thống kê 2', ul.statMemberLabel)}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="text-lg font-bold text-heritage-800">${branches.length || 1}</div>
+                                    <div class="text-[11px] text-stone-500 font-medium">
+                                        ${editableTextHtml('uiLabels.statBranchLabel', 'Nhãn thống kê 3', ul.statBranchLabel)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Thanh Tìm Kiếm & Bộ Lọc Đời -->
+                <div class="px-4 pt-4 space-y-2.5">
+                    <div class="flex gap-2">
+                        <div class="relative flex-1">
+                            <i data-lucide="search" class="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2"></i>
+                            <input type="text" value="${searchQuery}" oninput="handleSearch(this.value)" placeholder="Tìm tên, quê quán, vợ/chồng..." class="w-full pl-9 pr-8 py-2.5 bg-white rounded-xl border border-amber-200 text-sm focus:border-crimson-800 outline-none shadow-2xs">
+                            ${searchQuery ? `<button onclick="handleSearch('')" class="absolute right-2.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"><i data-lucide="x-circle" class="w-4 h-4"></i></button>` : ''}
+                        </div>
+                        <div class="flex items-center bg-white rounded-xl border border-amber-200 px-1 shadow-2xs">
+                            <button onclick="changeZoom(-0.1)" class="p-2 text-stone-600 hover:text-crimson-800" title="Thu nhỏ"><i data-lucide="zoom-out" class="w-4 h-4"></i></button>
+                            <span class="text-[11px] font-semibold text-stone-500 w-9 text-center">${Math.round(treeZoom * 100)}%</span>
+                            <button onclick="changeZoom(0.1)" class="p-2 text-stone-600 hover:text-crimson-800" title="Phóng to"><i data-lucide="zoom-in" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+
+                    <!-- Bộ lọc nhanh theo Đời -->
+                    <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+                        <button onclick="setFilterGen('all')" class="px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition ${filterGen === 'all' ? 'bg-crimson-800 text-white shadow-xs' : 'bg-white text-stone-600 border border-amber-200'}">
+                            Tất cả (${totalMembers})
+                        </button>
+                        ${Array.from({length: maxGen}, (_, i) => i + 1).map(g => `
+                            <button onclick="setFilterGen('${g}')" class="px-3 py-1 rounded-full text-xs font-semibold shrink-0 transition ${String(filterGen) === String(g) ? 'bg-crimson-800 text-white shadow-xs' : 'bg-white text-stone-600 border border-amber-200'}">
+                                Đời ${g}
+                            </button>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- Sơ Đồ Cây Gia Phả Trực Quan -->
+                <div class="px-3 pt-3 pb-6 overflow-x-auto">
+                    <div id="tree-canvas" style="transform: scale(${treeZoom}); transform-origin: top center; transition: transform 0.2s ease;" class="space-y-6">
+                        ${sortedGens.length === 0 ? `
+                            <div class="text-center py-12 bg-white/80 rounded-2xl border border-dashed border-amber-300">
+                                <i data-lucide="users" class="w-10 h-10 text-amber-400 mx-auto mb-2"></i>
+                                <p class="text-sm text-stone-500">Không tìm thấy thành viên phù hợp.</p>
+                            </div>
+                        ` : sortedGens.map((gen, idx) => `
+                            <div class="relative">
+                                <div class="flex items-center justify-center mb-3">
+                                    <div class="bg-gradient-to-r from-amber-100 via-amber-200 to-amber-100 border border-amber-400/60 px-4 py-1 rounded-full shadow-2xs flex items-center gap-2">
+                                        <span class="w-2 h-2 rounded-full bg-crimson-800"></span>
+                                        <span class="font-serif font-bold text-xs text-crimson-950 uppercase tracking-wider">Đời Thứ ${gen}</span>
+                                        <span class="text-[11px] text-amber-900 font-medium">(${generations[gen].length} người)</span>
+                                    </div>
+                                </div>
+
+                                <div class="grid grid-cols-1 gap-3">
+                                    ${generations[gen].map(member => renderMemberCard(member)).join('')}
+                                </div>
+
+                                ${idx < sortedGens.length - 1 ? `
+                                    <div class="flex flex-col items-center my-2">
+                                        <div class="w-0.5 h-5 bg-gradient-to-b from-amber-500 to-crimson-700"></div>
+                                        <i data-lucide="chevron-down" class="w-4 h-4 text-crimson-700 -mt-1.5"></i>
+                                    </div>
+                                ` : ''}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderMemberCard(member) {
+            const parent = appData.members.find(p => p.id === member.parentId);
+            const isDeceased = member.status === 'deceased';
+            const displayName = member.name && member.name.trim() ? member.name : 'Chưa rõ họ tên';
+            const borderStyle = isDeceased
+                ? 'border-stone-400 bg-stone-50/95'
+                : (member.gender === 'male' ? 'border-amber-400/80 bg-white' : (member.gender === 'female' ? 'border-rose-300/80 bg-white' : 'border-amber-200 bg-white'));
+
+            const genderBadge = member.gender === 'male'
+                ? { icon: '♂', bg: 'bg-amber-700' }
+                : (member.gender === 'female' ? { icon: '♀', bg: 'bg-rose-600' } : { icon: '•', bg: 'bg-stone-500' });
+
+            return `
+                <div onclick="openMemberDetail('${member.id}')" class="rounded-2xl border-2 ${borderStyle} p-3 shadow-sm hover:shadow-md active:scale-[0.99] transition cursor-pointer relative overflow-hidden">
+                    ${isDeceased ? `
+                        <div class="absolute top-0 right-0 bg-stone-600 text-stone-100 text-[9px] font-semibold px-2.5 py-0.5 rounded-bl-xl">
+                            Tạ thế
+                        </div>
+                    ` : ''}
+
+                    <div class="flex items-center gap-3">
+                        <div class="relative shrink-0">
+                            <img src="${member.avatar || 'https://placehold.co/150x150/f2dfc2/7c2d12?text=' + encodeURIComponent(displayName.charAt(0))}"
+                                 onerror="this.src='https://placehold.co/150x150/f2dfc2/7c2d12?text=TV'"
+                                 alt="${displayName}"
+                                 class="w-14 h-14 rounded-full object-cover border-2 ${isDeceased ? 'border-stone-500 grayscale-[35%]' : (member.gender === 'male' ? 'border-amber-600' : 'border-rose-500')} shadow-xs">
+                            <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow ${genderBadge.bg}">
+                                ${genderBadge.icon}
+                            </span>
+                        </div>
+
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <h4 class="font-serif font-bold text-base text-stone-900 truncate">${displayName}</h4>
+                                ${member.order ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 font-semibold">${member.order}</span>` : ''}
+                                ${member.relationType && member.relationType !== 'Gốc' ? `<span class="text-[10px] px-1.5 py-0.5 rounded-md bg-stone-100 text-stone-600 font-medium">${member.relationType}</span>` : ''}
+                            </div>
+
+                            ${member.alias ? `<p class="text-xs italic text-amber-800 truncate">${member.alias}</p>` : ''}
+
+                            <div class="mt-1 space-y-0.5 text-xs text-stone-600">
+                                ${parent ? `
+                                    <div class="flex items-center gap-1 truncate">
+                                        <i data-lucide="corner-down-right" class="w-3 h-3 text-amber-600 shrink-0"></i>
+                                        <span>Con của: <b class="text-stone-800">${parent.name || 'Chưa rõ tên'}</b></span>
+                                    </div>
+                                ` : ''}
+                                ${member.spouse ? `
+                                    <div class="flex items-center gap-1 truncate">
+                                        <i data-lucide="heart" class="w-3 h-3 text-rose-500 shrink-0"></i>
+                                        <span>Phối ngẫu: ${member.spouse}</span>
+                                    </div>
+                                ` : ''}
+                                ${member.hometown ? `
+                                    <div class="flex items-center gap-1 truncate text-[11px] text-stone-500">
+                                        <i data-lucide="map-pin" class="w-3 h-3 text-amber-700/70 shrink-0"></i>
+                                        <span>Quê quán: ${member.hometown}</span>
+                                    </div>
+                                ` : ''}
+                                ${(member.birth || (isDeceased && member.death)) ? `
+                                    <div class="flex items-center gap-2 text-[11px] text-stone-500 pt-0.5 flex-wrap">
+                                        ${member.birth ? `<span>Sinh: ${member.birth}</span>` : ''}
+                                        ${isDeceased && member.death ? `<span>• Giỗ: <b class="text-crimson-800">${member.death}</b></span>` : ''}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        </div>
+
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-stone-400 shrink-0"></i>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleSearch(val) {
+            searchQuery = val;
+            renderCurrentTab();
+        }
+
+        function setFilterGen(gen) {
+            filterGen = gen;
+            renderCurrentTab();
+        }
+
+        function changeZoom(delta) {
+            treeZoom = Math.min(1.2, Math.max(0.7, +(treeZoom + delta).toFixed(1)));
+            const canvas = document.getElementById('tree-canvas');
+            if (canvas) canvas.style.transform = `scale(${treeZoom})`;
+            renderCurrentTab();
+        }
+
+        // ==================== HỒ SƠ CHI TIẾT & FORM THÀNH VIÊN (MỞ RỘNG) ====================
+        function openMemberDetail(id) {
+            selectedMemberId = id;
+            const member = appData.members.find(m => m.id === id);
+            if (!member) return;
+
+            const parent = appData.members.find(p => p.id === member.parentId);
+            const children = appData.members.filter(c => c.parentId === member.id);
+            const isDeceased = member.status === 'deceased';
+            const displayName = member.name && member.name.trim() ? member.name : 'Chưa rõ họ tên';
+
+            const editBtn = document.getElementById('btn-edit-member-modal');
+            if (isAdmin) editBtn.classList.remove('hidden');
+            else editBtn.classList.add('hidden');
+
+            // Xây dựng danh sách thông tin hành chính (chỉ hiện trường có dữ liệu)
+            const adminFields = [
+                { label: 'Nơi khai sinh', val: member.birthplace },
+                { label: 'Quê quán', val: member.hometown },
+                { label: 'Dân tộc', val: member.ethnicity },
+                { label: 'Tôn giáo', val: member.religion },
+                { label: 'Nơi thường trú', val: member.address },
+                { label: 'Nghề nghiệp / Học vấn', val: member.job },
+                { label: 'Số điện thoại / Liên hệ', val: member.phone }
+            ].filter(item => item.val && item.val.trim() !== '');
+
+            const statusText = member.status === 'deceased' ? 'Đã tạ thế' : (member.status === 'alive' ? 'Còn sống' : 'Không rõ');
+
+            const content = document.getElementById('member-detail-content');
+            content.innerHTML = `
+                <!-- Thẻ Chân Dung & Danh Xưng -->
+                <div class="flex flex-col items-center text-center bg-white p-5 rounded-2xl border border-amber-200/80 shadow-2xs relative">
+                    <div class="relative">
+                        <img src="${member.avatar || 'https://placehold.co/200x200/f2dfc2/7c2d12?text=' + encodeURIComponent(displayName.charAt(0))}"
+                             onerror="this.src='https://placehold.co/200x200/f2dfc2/7c2d12?text=TV'"
+                             class="w-28 h-28 rounded-full object-cover border-4 ${isDeceased ? 'border-stone-500' : 'border-amber-500'} shadow-md">
+                        ${isAdmin ? `
+                            <button onclick="editCurrentMember()" class="absolute bottom-0 right-0 bg-crimson-800 text-white p-2 rounded-full shadow-lg hover:bg-crimson-700" title="Đổi ảnh & Sửa thông tin">
+                                <i data-lucide="camera" class="w-4 h-4"></i>
+                            </button>
+                        ` : ''}
+                    </div>
+                    <h2 class="font-serif font-bold text-xl text-stone-900 mt-3">${displayName}</h2>
+                    ${member.alias ? `<p class="text-sm italic text-amber-800 font-medium">${member.alias}</p>` : ''}
+                    <div class="flex items-center gap-1.5 mt-2.5 flex-wrap justify-center">
+                        ${member.generation ? `<span class="px-3 py-1 rounded-full bg-crimson-900 text-amber-100 text-xs font-semibold">Đời thứ ${member.generation}</span>` : ''}
+                        ${member.branch ? `<span class="px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-semibold">${member.branch}</span>` : ''}
+                        ${member.order ? `<span class="px-3 py-1 rounded-full bg-stone-100 text-stone-700 text-xs font-semibold">${member.order}</span>` : ''}
+                        ${member.relationType && member.relationType !== 'Gốc' ? `<span class="px-3 py-1 rounded-full bg-sky-50 text-sky-800 border border-sky-200 text-xs font-semibold">${member.relationType}</span>` : ''}
+                    </div>
+                </div>
+
+                <!-- Nhóm 1: Thông Tin Hành Chính & Căn Cước -->
+                ${adminFields.length > 0 ? `
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200/80 space-y-2.5 text-sm">
+                        <h4 class="font-serif font-bold text-crimson-900 flex items-center gap-2 border-b border-amber-100 pb-2">
+                            <i data-lucide="file-text" class="w-4 h-4 text-amber-600"></i> Thông Tin Hành Chính & Căn Cước
+                        </h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                            ${adminFields.map(f => `
+                                <div class="${(f.label === 'Nơi khai sinh' || f.label === 'Quê quán' || f.label === 'Nơi thường trú') ? 'sm:col-span-2' : ''} bg-heritage-50/70 px-3 py-2 rounded-xl border border-amber-100/80">
+                                    <span class="text-[11px] text-stone-400 block">${f.label}</span>
+                                    <span class="font-semibold text-stone-800">${f.val}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- Nhóm 2: Mốc Thời Gian & Phối Ngẫu -->
+                <div class="bg-white p-4 rounded-2xl border border-amber-200/80 space-y-2.5 text-sm">
+                    <h4 class="font-serif font-bold text-crimson-900 flex items-center gap-2 border-b border-amber-100 pb-2">
+                        <i data-lucide="calendar" class="w-4 h-4 text-amber-600"></i> Mốc Thời Gian & Phối Ngẫu
+                    </h4>
+                    <div class="grid grid-cols-2 gap-2.5">
+                        <div>
+                            <span class="text-[11px] text-stone-400 block">Ngày tháng năm sinh</span>
+                            <span class="font-semibold text-stone-800">${member.birth || 'Chưa có thông tin'}</span>
+                        </div>
+                        <div>
+                            <span class="text-[11px] text-stone-400 block">Tình trạng</span>
+                            <span class="font-semibold ${isDeceased ? 'text-stone-600' : (member.status === 'alive' ? 'text-emerald-700' : 'text-stone-500')}">
+                                ${statusText}
+                            </span>
+                        </div>
+                    </div>
+
+                    ${isDeceased && (member.deathDate || member.death || member.burial || member.burialMap) ? `
+                        <div class="bg-stone-100 p-3 rounded-xl space-y-2 border border-stone-200/80">
+                            <div class="grid grid-cols-2 gap-2">
+                                ${member.deathDate ? `
+                                    <div>
+                                        <span class="text-[11px] text-stone-500 block">Ngày tháng năm mất</span>
+                                        <span class="font-semibold text-stone-800">${member.deathDate}</span>
+                                    </div>
+                                ` : ''}
+                                ${member.death ? `
+                                    <div>
+                                        <span class="text-[11px] text-stone-500 block">Ngày giỗ (Âm lịch)</span>
+                                        <span class="font-bold text-crimson-800">${member.death}</span>
+                                    </div>
+                                ` : ''}
+                            </div>
+                            ${member.burial ? `
+                                <div>
+                                    <span class="text-[11px] text-stone-500 block">Nơi an táng / Phần mộ</span>
+                                    <span class="font-medium text-stone-800">${member.burial}</span>
+                                </div>
+                            ` : ''}
+                            ${member.burialMap ? `
+                                <a href="${member.burialMap}" target="_blank" rel="noopener" class="inline-flex items-center gap-1.5 text-xs font-semibold text-crimson-800 bg-white px-3 py-1.5 rounded-lg border border-amber-300 shadow-2xs hover:bg-amber-50">
+                                    <i data-lucide="map-pin" class="w-3.5 h-3.5"></i> Xem vị trí phần mộ trên bản đồ
+                                </a>
+                            ` : ''}
+                        </div>
+                    ` : ''}
+
+                    ${member.spouse ? `
+                        <div class="pt-1 border-t border-stone-100">
+                            <span class="text-[11px] text-stone-400 block">Vợ / Chồng (Phối ngẫu)</span>
+                            <span class="font-semibold text-stone-800">${member.spouse}</span>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Nhóm 3: Quan Hệ Huyết Thống -->
+                <div class="bg-white p-4 rounded-2xl border border-amber-200/80 space-y-3 text-sm">
+                    <h4 class="font-serif font-bold text-crimson-900 flex items-center gap-2 border-b border-amber-100 pb-2">
+                        <i data-lucide="network" class="w-4 h-4 text-amber-600"></i> Quan Hệ Huyết Thống
+                    </h4>
+                    <div>
+                        <span class="text-[11px] text-stone-400 block mb-1">Thân phụ / Thân mẫu</span>
+                        ${parent ? `
+                            <button onclick="openMemberDetail('${parent.id}')" class="w-full flex items-center justify-between p-2.5 rounded-xl bg-heritage-50 hover:bg-amber-100/70 border border-amber-200 transition text-left">
+                                <div class="flex items-center gap-2.5">
+                                    <img src="${parent.avatar}" onerror="this.src='https://placehold.co/100x100/f2dfc2/7c2d12?text=TV'" class="w-8 h-8 rounded-full object-cover">
+                                    <div>
+                                        <div class="font-semibold text-stone-900">${parent.name || 'Chưa rõ tên'}</div>
+                                        <div class="text-[11px] text-stone-500">Đời thứ ${parent.generation}</div>
+                                    </div>
+                                </div>
+                                <i data-lucide="arrow-up-right" class="w-4 h-4 text-amber-700"></i>
+                            </button>
+                        ` : `<span class="text-stone-500 italic text-xs">Là Thủy tổ / Chưa liên kết đời trên</span>`}
+                    </div>
+
+                    <div>
+                        <span class="text-[11px] text-stone-400 block mb-1">Các con (${children.length})</span>
+                        ${children.length > 0 ? `
+                            <div class="space-y-1.5">
+                                ${children.map(c => `
+                                    <button onclick="openMemberDetail('${c.id}')" class="w-full flex items-center justify-between p-2.5 rounded-xl bg-heritage-50 hover:bg-amber-100/70 border border-amber-200 transition text-left">
+                                        <div class="flex items-center gap-2.5">
+                                            <img src="${c.avatar}" onerror="this.src='https://placehold.co/100x100/f2dfc2/7c2d12?text=TV'" class="w-8 h-8 rounded-full object-cover">
+                                            <div>
+                                                <div class="font-semibold text-stone-900">${c.name || 'Chưa rõ tên'}</div>
+                                                <div class="text-[11px] text-stone-500">${c.order || 'Con'} • Đời ${c.generation}</div>
+                                            </div>
+                                        </div>
+                                        <i data-lucide="chevron-right" class="w-4 h-4 text-amber-700"></i>
+                                    </button>
+                                `).join('')}
+                            </div>
+                        ` : `<span class="text-stone-500 italic text-xs">Chưa có thông tin con cái</span>`}
+                    </div>
+                </div>
+
+                <!-- Nhóm 4: Tiểu Sử & Dấu Ấn -->
+                ${member.bio && member.bio.trim() ? `
+                    <div class="bg-white p-4 rounded-2xl border border-amber-200/80 space-y-2 text-sm">
+                        <h4 class="font-serif font-bold text-crimson-900 flex items-center gap-2 border-b border-amber-100 pb-2">
+                            <i data-lucide="book-open" class="w-4 h-4 text-amber-600"></i> Tiểu Sử & Dấu Ấn
+                        </h4>
+                        <p class="text-stone-700 leading-relaxed whitespace-pre-line">${member.bio}</p>
+                    </div>
+                ` : ''}
+            `;
+
+            openModal('member-detail-modal');
+            lucide.createIcons();
+        }
+
+        function openMemberFormModal(memberToEdit = null) {
+            if (!isAdmin) return;
+            const form = document.getElementById('member-form');
+            form.reset();
+
+            const parentSelect = document.getElementById('form-parent');
+            parentSelect.innerHTML = '<option value="">-- Thủy tổ / Không liên kết --</option>' +
+                appData.members
+                    .filter(m => !memberToEdit || m.id !== memberToEdit.id)
+                    .sort((a, b) => (a.generation || 1) - (b.generation || 1))
+                    .map(m => `<option value="${m.id}">Đời ${m.generation || 1} - ${m.name || 'Chưa rõ tên'}</option>`)
+                    .join('');
+
+            const deleteBtn = document.getElementById('btn-delete-member');
+
+            if (memberToEdit) {
+                document.getElementById('member-form-title').textContent = 'Chỉnh Sửa Hồ Sơ Thành Viên';
+                document.getElementById('form-member-id').value = memberToEdit.id;
+                document.getElementById('form-name').value = memberToEdit.name || '';
+                document.getElementById('form-alias').value = memberToEdit.alias || '';
+                document.getElementById('form-gender').value = memberToEdit.gender || 'male';
+                document.getElementById('form-generation').value = memberToEdit.generation || 1;
+                document.getElementById('form-relation-type').value = memberToEdit.relationType || 'Gốc';
+                document.getElementById('form-order').value = memberToEdit.order || '';
+                document.getElementById('form-parent').value = memberToEdit.parentId || '';
+                document.getElementById('form-branch').value = memberToEdit.branch || '';
+                document.getElementById('form-spouse').value = memberToEdit.spouse || '';
+                
+                // Các trường hành chính mở rộng
+                document.getElementById('form-birthplace').value = memberToEdit.birthplace || '';
+                document.getElementById('form-hometown').value = memberToEdit.hometown || '';
+                document.getElementById('form-ethnicity').value = memberToEdit.ethnicity || '';
+                document.getElementById('form-religion').value = memberToEdit.religion || '';
+                document.getElementById('form-address').value = memberToEdit.address || '';
+                document.getElementById('form-job').value = memberToEdit.job || '';
+                document.getElementById('form-phone').value = memberToEdit.phone || '';
+
+                // Mốc thời gian
+                document.getElementById('form-birth').value = memberToEdit.birth || '';
+                document.getElementById('form-status').value = memberToEdit.status || 'alive';
+                document.getElementById('form-death-date').value = memberToEdit.deathDate || '';
+                document.getElementById('form-death').value = memberToEdit.death || '';
+                document.getElementById('form-burial').value = memberToEdit.burial || '';
+                document.getElementById('form-burial-map').value = memberToEdit.burialMap || '';
+                document.getElementById('form-bio').value = memberToEdit.bio || '';
+
+                document.getElementById('form-avatar-data').value = memberToEdit.avatar || '';
+                document.getElementById('form-avatar-preview').src = memberToEdit.avatar || 'https://placehold.co/150x150/f2dfc2/7c2d12?text=Avatar';
+                deleteBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('member-form-title').textContent = 'Thêm Thành Viên Mới';
+                document.getElementById('form-member-id').value = '';
+                document.getElementById('form-avatar-data').value = '';
+                document.getElementById('form-avatar-preview').src = 'https://placehold.co/150x150/f2dfc2/7c2d12?text=Avatar';
+                deleteBtn.classList.add('hidden');
+            }
+
+            toggleDeceasedFields();
+            openModal('member-form-modal');
+            lucide.createIcons();
+        }
+
+        function clearMemberAvatar() {
+            document.getElementById('form-avatar-data').value = '';
+            document.getElementById('form-avatar-preview').src = 'https://placehold.co/150x150/f2dfc2/7c2d12?text=Avatar';
+            showToast('Đã gỡ ảnh đại diện');
+        }
+
+        function editCurrentMember() {
+            const member = appData.members.find(m => m.id === selectedMemberId);
+            if (member) {
+                closeModal('member-detail-modal');
+                openMemberFormModal(member);
+            }
+        }
+
+        function toggleDeceasedFields() {
+            const status = document.getElementById('form-status').value;
+            const fields = document.getElementById('deceased-fields');
+            if (status === 'deceased') fields.classList.remove('hidden');
+            else fields.classList.add('hidden');
+        }
+
+        function saveMemberForm(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+
+            const id = document.getElementById('form-member-id').value;
+            const rawName = document.getElementById('form-name').value.trim();
+            const avatarData = document.getElementById('form-avatar-data').value;
+            const fallbackChar = rawName ? encodeURIComponent(rawName.split(' ').pop()) : 'TV';
+
+            const memberObj = {
+                id: id || 'm_' + Date.now(),
+                name: rawName,
+                alias: document.getElementById('form-alias').value.trim(),
+                gender: document.getElementById('form-gender').value,
+                generation: Number(document.getElementById('form-generation').value) || 1,
+                relationType: document.getElementById('form-relation-type').value,
+                order: document.getElementById('form-order').value.trim(),
+                parentId: document.getElementById('form-parent').value,
+                branch: document.getElementById('form-branch').value.trim(),
+                spouse: document.getElementById('form-spouse').value.trim(),
+                birthplace: document.getElementById('form-birthplace').value.trim(),
+                hometown: document.getElementById('form-hometown').value.trim(),
+                ethnicity: document.getElementById('form-ethnicity').value.trim(),
+                religion: document.getElementById('form-religion').value.trim(),
+                address: document.getElementById('form-address').value.trim(),
+                job: document.getElementById('form-job').value.trim(),
+                phone: document.getElementById('form-phone').value.trim(),
+                birth: document.getElementById('form-birth').value.trim(),
+                status: document.getElementById('form-status').value,
+                deathDate: document.getElementById('form-death-date').value.trim(),
+                death: document.getElementById('form-death').value.trim(),
+                burial: document.getElementById('form-burial').value.trim(),
+                burialMap: document.getElementById('form-burial-map').value.trim(),
+                bio: document.getElementById('form-bio').value.trim(),
+                avatar: avatarData || `https://placehold.co/200x200/991b1b/fef3c7?text=${fallbackChar}`
+            };
+
+            if (id) {
+                const idx = appData.members.findIndex(m => m.id === id);
+                if (idx !== -1) appData.members[idx] = memberObj;
+                showToast('Đã cập nhật hồ sơ thành viên!');
+            } else {
+                appData.members.push(memberObj);
+                showToast('Đã thêm thành viên mới vào gia phả!');
+            }
+
+            saveData();
+            closeModal('member-form-modal');
+            renderCurrentTab();
+        }
+
+        function deleteCurrentMember() {
+            const id = document.getElementById('form-member-id').value;
+            if (!id || !isAdmin) return;
+            showConfirm('Xóa thành viên', 'Bạn có chắc chắn muốn xóa thành viên này khỏi cây gia phả? Hành động này không thể hoàn tác.', () => {
+                appData.members = appData.members.filter(m => m.id !== id);
+                appData.members.forEach(m => {
+                    if (m.parentId === id) m.parentId = '';
+                });
+                saveData();
+                closeModal('member-form-modal');
+                renderCurrentTab();
+                showToast('Đã xóa thành viên khỏi gia phả.');
+            });
+        }
+
+        // ==================== CẤU HÌNH ẢNH BÌA, DÒNG CHỮ BÌA & THỨ TỰ TAB ====================
+        function openCoverAndTabsModal() {
+            if (!isAdmin) return;
+            tempCoverConfig = JSON.parse(JSON.stringify(appData.coverConfig));
+            tempTabs = JSON.parse(JSON.stringify(appData.tabs));
+            renderCoverAndTabsModalBody();
+            openModal('cover-tabs-modal');
+        }
+
+        function renderCoverAndTabsModalBody() {
+            const body = document.getElementById('cover-tabs-modal-body');
+            if (!body) return;
+
+            body.innerHTML = `
+                <!-- PHẦN 1: ẢNH BÌA & TÙY CHỌN HIỂN THỊ -->
+                <div class="space-y-3 bg-heritage-50 p-3.5 rounded-2xl border border-amber-200/80">
+                    <div class="font-bold text-xs text-crimson-900 uppercase tracking-wider flex items-center justify-between">
+                        <span>1. Ảnh Bìa Website (Banner)</span>
+                        ${tempCoverConfig.banner ? `
+                            <button type="button" onclick="removeTempBanner()" class="text-[11px] text-red-700 hover:underline font-semibold flex items-center gap-1">
+                                <i data-lucide="trash-2" class="w-3 h-3"></i> Xóa ảnh bìa
+                            </button>
+                        ` : ''}
+                    </div>
+                    <div class="relative rounded-2xl overflow-hidden border border-amber-300 h-36 bg-cover-ornament flex items-center justify-center">
+                        ${tempCoverConfig.banner ? `
+                            <img src="${tempCoverConfig.banner}" alt="Banner" class="w-full h-full object-cover">
+                        ` : `
+                            <span class="text-xs text-amber-200/80 italic">Đang dùng nền hoa văn cổ truyền</span>
+                        `}
+                        <label for="temp-banner-input" class="absolute bottom-2.5 right-2.5 bg-stone-900/85 text-white px-3 py-1.5 rounded-full text-xs font-medium cursor-pointer hover:bg-stone-900 flex items-center gap-1.5 backdrop-blur-xs shadow">
+                            <i data-lucide="image-plus" class="w-4 h-4 text-amber-400"></i> Tải ảnh bìa mới
+                        </label>
+                        <input type="file" id="temp-banner-input" accept="image/*" class="hidden" onchange="handleTempBannerUpload(event)">
+                    </div>
+
+                    <div class="grid grid-cols-1 gap-2.5 pt-1">
+                        <div>
+                            <label class="block text-xs font-semibold text-stone-700 mb-1">Nhãn góc trên bên trái bìa (để trống nếu muốn ẩn)</label>
+                            <input type="text" value="${(tempCoverConfig.yearBadge || '').replace(/"/g, '&quot;')}" oninput="tempCoverConfig.yearBadge = this.value" placeholder="VD: Lập phả năm Bính Ngọ 2026" class="w-full px-3 py-2 rounded-xl border border-stone-300 bg-white text-xs outline-none">
+                        </div>
+                        <label class="flex items-center gap-2 text-xs font-medium text-stone-700 cursor-pointer pt-1">
+                            <input type="checkbox" ${tempCoverConfig.showStats !== false ? 'checked' : ''} onchange="tempCoverConfig.showStats = this.checked" class="w-4 h-4 accent-crimson-800 rounded">
+                            <span>Hiển thị thanh 3 ô thống kê nhanh (Số đời, Thành viên, Chi)</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- PHẦN 2: DANH SÁCH DÒNG CHỮ TRÊN ẢNH BÌA (THÊM / XÓA / SỬA / SẮP XẾP) -->
+                <div class="space-y-3 bg-white p-3.5 rounded-2xl border border-amber-200">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <div class="font-bold text-xs text-crimson-900 uppercase tracking-wider">2. Các Dòng Chữ Trên Ảnh Bìa</div>
+                            <p class="text-[11px] text-stone-500">Có thể xóa bớt hoặc xóa hết nếu ảnh bìa đã thiết kế sẵn chữ</p>
+                        </div>
+                        <button type="button" onclick="addTempCoverLine()" class="bg-amber-100 text-amber-950 hover:bg-amber-200 px-2.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1 shrink-0 transition">
+                            <i data-lucide="plus" class="w-3.5 h-3.5"></i> Thêm dòng
+                        </button>
+                    </div>
+
+                    <div class="space-y-2.5">
+                        ${tempCoverConfig.lines.length === 0 ? `
+                            <div class="text-center py-4 text-xs text-stone-400 italic bg-stone-50 rounded-xl border border-dashed border-stone-200">
+                                Đã xóa hết chữ trên ảnh bìa. Bấm "+ Thêm dòng" nếu muốn thêm lại.
+                            </div>
+                        ` : tempCoverConfig.lines.map((line, idx) => `
+                            <div class="p-2.5 rounded-xl bg-stone-50 border border-stone-200 space-y-2">
+                                <div class="flex items-center justify-between gap-1.5">
+                                    <select onchange="updateTempCoverLine(${idx}, 'style', this.value)" class="px-2 py-1 rounded-lg border border-stone-300 bg-white text-[11px] font-semibold text-stone-700 outline-none">
+                                        <option value="badge" ${line.style === 'badge' ? 'selected' : ''}>Nhãn phụ in hoa nhỏ</option>
+                                        <option value="title" ${line.style === 'title' ? 'selected' : ''}>Tiêu đề chính cỡ lớn</option>
+                                        <option value="subtitle" ${line.style === 'subtitle' ? 'selected' : ''}>Dòng địa danh / mô tả</option>
+                                        <option value="motto" ${line.style === 'motto' ? 'selected' : ''}>Câu đối / Chữ nghiêng</option>
+                                    </select>
+                                    <div class="flex items-center gap-1">
+                                        <button type="button" onclick="moveTempCoverLine(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="p-1 rounded bg-white border border-stone-200 text-stone-600 disabled:opacity-30" title="Đưa lên">
+                                            <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                        <button type="button" onclick="moveTempCoverLine(${idx}, 1)" ${idx === tempCoverConfig.lines.length - 1 ? 'disabled' : ''} class="p-1 rounded bg-white border border-stone-200 text-stone-600 disabled:opacity-30" title="Đưa xuống">
+                                            <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                        <button type="button" onclick="removeTempCoverLine(${idx})" class="p-1 rounded bg-red-50 border border-red-200 text-red-700 hover:bg-red-100" title="Xóa dòng này">
+                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <input type="text" value="${(line.text || '').replace(/"/g, '&quot;')}" oninput="updateTempCoverLine(${idx}, 'text', this.value)" placeholder="Nhập nội dung dòng chữ..." class="w-full px-3 py-1.5 rounded-lg border border-stone-300 bg-white text-xs font-medium outline-none">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+
+                <!-- PHẦN 3: CHỈNH SỬA THỨ TỰ & TÊN TỪNG TAB -->
+                <div class="space-y-3 bg-amber-50/60 p-3.5 rounded-2xl border border-amber-200">
+                    <div>
+                        <div class="font-bold text-xs text-crimson-900 uppercase tracking-wider">3. Thứ Tự & Tên Thanh Tab Dưới Đáy</div>
+                        <p class="text-[11px] text-stone-500">Bấm mũi tên lên/xuống để đổi thứ tự hiển thị (Tab số 1 mở mặc định)</p>
+                    </div>
+                    <div class="space-y-2">
+                        ${tempTabs.map((t, idx) => `
+                            <div class="flex items-center gap-2 bg-white p-2 rounded-xl border border-amber-200 shadow-2xs">
+                                <span class="w-6 h-6 rounded-lg bg-crimson-900 text-amber-100 text-xs font-bold flex items-center justify-center shrink-0">${idx + 1}</span>
+                                <i data-lucide="${t.icon}" class="w-4 h-4 text-amber-700 shrink-0"></i>
+                                <input type="text" value="${(t.label || '').replace(/"/g, '&quot;')}" oninput="tempTabs[${idx}].label = this.value" class="flex-1 min-w-0 px-2.5 py-1.5 rounded-lg border border-stone-300 text-xs font-semibold outline-none">
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <button type="button" onclick="moveTempTab(${idx}, -1)" ${idx === 0 ? 'disabled' : ''} class="p-1.5 rounded-lg bg-stone-100 text-stone-700 hover:bg-amber-100 disabled:opacity-30" title="Chuyển sang trái">
+                                        <i data-lucide="arrow-up" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                    <button type="button" onclick="moveTempTab(${idx}, 1)" ${idx === tempTabs.length - 1 ? 'disabled' : ''} class="p-1.5 rounded-lg bg-stone-100 text-stone-700 hover:bg-amber-100 disabled:opacity-30" title="Chuyển sang phải">
+                                        <i data-lucide="arrow-down" class="w-3.5 h-3.5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        function handleTempBannerUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            compressImage(file, 950, (base64) => {
+                tempCoverConfig.banner = base64;
+                renderCoverAndTabsModalBody();
+                showToast('Đã tải ảnh bìa mới!');
+            });
+        }
+
+        function removeTempBanner() {
+            tempCoverConfig.banner = '';
+            renderCoverAndTabsModalBody();
+        }
+
+        function addTempCoverLine() {
+            tempCoverConfig.lines.push({
+                id: 'cl_' + Date.now(),
+                text: 'Dòng thông tin mới',
+                style: 'subtitle'
+            });
+            renderCoverAndTabsModalBody();
+        }
+
+        function updateTempCoverLine(idx, field, val) {
+            if (tempCoverConfig.lines[idx]) {
+                tempCoverConfig.lines[idx][field] = val;
+            }
+        }
+
+        function removeTempCoverLine(idx) {
+            tempCoverConfig.lines.splice(idx, 1);
+            renderCoverAndTabsModalBody();
+        }
+
+        function moveTempCoverLine(idx, dir) {
+            const target = idx + dir;
+            if (target < 0 || target >= tempCoverConfig.lines.length) return;
+            const tmp = tempCoverConfig.lines[idx];
+            tempCoverConfig.lines[idx] = tempCoverConfig.lines[target];
+            tempCoverConfig.lines[target] = tmp;
+            renderCoverAndTabsModalBody();
+        }
+
+        function moveTempTab(idx, dir) {
+            const target = idx + dir;
+            if (target < 0 || target >= tempTabs.length) return;
+            const tmp = tempTabs[idx];
+            tempTabs[idx] = tempTabs[target];
+            tempTabs[target] = tmp;
+            renderCoverAndTabsModalBody();
+        }
+
+        function saveCoverAndTabsConfig() {
+            if (!isAdmin) return;
+            appData.coverConfig = tempCoverConfig;
+            appData.tabs = tempTabs.map(t => ({
+                ...t,
+                label: (t.label && t.label.trim()) ? t.label.trim() : 'Tab'
+            }));
+            saveData();
+            closeModal('cover-tabs-modal');
+            renderBottomNav();
+            renderCurrentTab();
+            showToast('Đã lưu cấu hình ảnh bìa & thứ tự tab!');
+        }
+
+        // ==================== TAB 2: LỊCH SỬ & TRUYỀN THỐNG DÒNG HỌ ====================
+        function renderHistoryTab() {
+            const ul = appData.uiLabels;
+            return `
+                <div class="p-4 space-y-4">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <h2 class="font-serif font-bold text-xl text-crimson-950">
+                                ${editableTextHtml('uiLabels.historyTabTitle', 'Tiêu đề trang Truyền thống', ul.historyTabTitle)}
+                            </h2>
+                            <p class="text-xs text-stone-500">
+                                ${editableTextHtml('uiLabels.historyTabSubtitle', 'Mô tả phụ trang Truyền thống', ul.historyTabSubtitle)}
+                            </p>
+                        </div>
+                        ${isAdmin ? `
+                            <button onclick="openTraditionFormModal()" class="bg-crimson-800 text-white px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow hover:bg-crimson-700 transition shrink-0">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Thêm mục
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <div class="space-y-3.5">
+                        ${appData.traditions.map((tr, index) => `
+                            <div class="${index % 2 === 1 ? 'bg-gradient-to-br from-amber-50 to-orange-50/60 border-amber-300/80' : 'bg-white border-amber-200'} rounded-2xl p-4 border shadow-2xs space-y-2.5">
+                                <div class="flex items-center justify-between gap-2 border-b border-amber-200/60 pb-2">
+                                    <div class="flex items-center gap-2 text-crimson-800 font-serif font-bold text-base">
+                                        <div class="p-2 rounded-xl bg-amber-100 shrink-0">
+                                            <i data-lucide="${tr.icon || 'scroll'}" class="w-4 h-4"></i>
+                                        </div>
+                                        <h3>${tr.title}</h3>
+                                    </div>
+                                    ${isAdmin ? `
+                                        <div class="flex items-center gap-1 shrink-0">
+                                            <button onclick="openTraditionFormModal('${tr.id}')" class="p-1.5 rounded-lg bg-amber-100 text-amber-900 hover:bg-amber-200 transition" title="Sửa mục này">
+                                                <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                            <button onclick="deleteTradition('${tr.id}')" class="p-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100 transition" title="Xóa mục này">
+                                                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                            </button>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                                <p class="text-sm text-stone-700 leading-relaxed whitespace-pre-line">${tr.content}</p>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }
+
+        function openTraditionFormModal(id = null) {
+            if (!isAdmin) return;
+            const item = id ? appData.traditions.find(t => t.id === id) : null;
+            document.getElementById('tradition-modal-title').textContent = item ? 'Chỉnh Sửa Mục Truyền Thống' : 'Thêm Mục Truyền Thống Mới';
+            document.getElementById('tradition-id').value = item ? item.id : '';
+            document.getElementById('tradition-icon').value = item ? (item.icon || 'scroll') : 'scroll';
+            document.getElementById('tradition-title').value = item ? item.title : '';
+            document.getElementById('tradition-content').value = item ? item.content : '';
+            openModal('tradition-form-modal');
+        }
+
+        function saveTraditionForm(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+            const id = document.getElementById('tradition-id').value;
+            const obj = {
+                id: id || 'tr_' + Date.now(),
+                icon: document.getElementById('tradition-icon').value,
+                title: document.getElementById('tradition-title').value.trim(),
+                content: document.getElementById('tradition-content').value.trim()
+            };
+            if (id) {
+                const idx = appData.traditions.findIndex(t => t.id === id);
+                if (idx !== -1) appData.traditions[idx] = obj;
+                showToast('Đã cập nhật mục truyền thống!');
+            } else {
+                appData.traditions.push(obj);
+                showToast('Đã thêm mục mới!');
+            }
+            saveData();
+            closeModal('tradition-form-modal');
+            renderCurrentTab();
+        }
+
+        function deleteTradition(id) {
+            if (!isAdmin) return;
+            showConfirm('Xóa mục nội dung', 'Bạn có chắc muốn xóa mục truyền thống này?', () => {
+                appData.traditions = appData.traditions.filter(t => t.id !== id);
+                saveData();
+                renderCurrentTab();
+                showToast('Đã xóa mục nội dung.');
+            });
+        }
+
+        // ==================== TAB 3: LỊCH GIỖ CHẠP & TIN TỨC ====================
+        function renderEventsTab() {
+            const deceasedMembers = appData.members.filter(m => m.status === 'deceased' && (m.death || m.deathDate));
+            const ul = appData.uiLabels;
+
+            const typeBadge = {
+                memorial: { label: 'Lịch Giỗ Tổ', color: 'bg-crimson-800 text-amber-100', icon: 'flame' },
+                gathering: { label: 'Họp Họ', color: 'bg-amber-600 text-white', icon: 'users' },
+                honor: { label: 'Vinh Danh / Khuyến Học', color: 'bg-emerald-700 text-white', icon: 'award' },
+                news: { label: 'Tin Gia Tộc', color: 'bg-sky-700 text-white', icon: 'newspaper' }
+            };
+
+            return `
+                <div class="p-4 space-y-5">
+                    <div class="flex items-center justify-between gap-2">
+                        <div>
+                            <h2 class="font-serif font-bold text-xl text-crimson-950">
+                                ${editableTextHtml('uiLabels.eventsTabTitle', 'Tiêu đề trang Sự kiện', ul.eventsTabTitle)}
+                            </h2>
+                            <p class="text-xs text-stone-500">
+                                ${editableTextHtml('uiLabels.eventsTabSubtitle', 'Mô tả phụ trang Sự kiện', ul.eventsTabSubtitle)}
+                            </p>
+                        </div>
+                        ${isAdmin ? `
+                            <button onclick="openEventFormModal()" class="bg-crimson-800 text-white px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow shrink-0">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Thêm tin
+                            </button>
+                        ` : ''}
+                    </div>
+
+                    <div class="space-y-3">
+                        ${appData.events.map(ev => {
+                            const badge = typeBadge[ev.type] || typeBadge.gathering;
+                            return `
+                                <div class="bg-white rounded-2xl p-4 border border-amber-200 shadow-2xs space-y-2 relative">
+                                    <div class="flex items-center justify-between">
+                                        <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${badge.color}">
+                                            <i data-lucide="${badge.icon}" class="w-3 h-3"></i> ${badge.label}
+                                        </span>
+                                        ${isAdmin ? `
+                                            <div class="flex items-center gap-1">
+                                                <button onclick="openEventFormModal('${ev.id}')" class="text-amber-800 hover:bg-amber-100 p-1.5 rounded-lg transition" title="Sửa tin">
+                                                    <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                                <button onclick="deleteEvent('${ev.id}')" class="text-stone-400 hover:text-red-600 p-1.5 rounded-lg transition" title="Xóa tin">
+                                                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                </button>
+                                            </div>
+                                        ` : ''}
+                                    </div>
+                                    <h4 class="font-serif font-bold text-base text-stone-900">${ev.title}</h4>
+                                    <div class="text-xs font-semibold text-amber-800 flex items-center gap-1.5">
+                                        <i data-lucide="clock" class="w-3.5 h-3.5"></i> ${ev.date}
+                                    </div>
+                                    <p class="text-sm text-stone-600 leading-relaxed whitespace-pre-line">${ev.desc}</p>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+
+                    <!-- Bảng tổng hợp Ngày Giỗ từ Phả Hệ -->
+                    <div class="bg-white rounded-2xl p-4 border border-amber-200 shadow-2xs space-y-3">
+                        <h3 class="font-serif font-bold text-base text-crimson-900 flex items-center gap-2 border-b border-amber-100 pb-2">
+                            <i data-lucide="calendar-days" class="w-4 h-4 text-amber-600"></i>
+                            Danh Sách Ngày Giỗ Trong Họ (${deceasedMembers.length})
+                        </h3>
+                        <div class="divide-y divide-stone-100">
+                            ${deceasedMembers.map(m => `
+                                <div onclick="openMemberDetail('${m.id}')" class="py-2.5 flex items-center justify-between cursor-pointer hover:bg-amber-50/60 px-2 rounded-xl transition gap-2">
+                                    <div class="min-w-0">
+                                        <div class="font-semibold text-sm text-stone-900 truncate">${m.name || 'Chưa rõ tên'} <span class="text-xs font-normal text-stone-500">(Đời ${m.generation})</span></div>
+                                        <div class="text-xs text-stone-500 truncate">${m.burial || 'Phần mộ tại quê nhà'}</div>
+                                    </div>
+                                    <span class="text-xs font-bold text-crimson-800 bg-red-50 px-2.5 py-1 rounded-lg border border-red-200/60 shrink-0">
+                                        ${m.death || m.deathDate}
+                                    </span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openEventFormModal(id = null) {
+            if (!isAdmin) return;
+            const ev = id ? appData.events.find(e => e.id === id) : null;
+            document.getElementById('event-modal-title').textContent = ev ? 'Chỉnh Sửa Sự Kiện / Tin Tức' : 'Thêm Lịch Giỗ / Tin Tức Mới';
+            document.getElementById('event-id').value = ev ? ev.id : '';
+            document.getElementById('event-type').value = ev ? ev.type : 'memorial';
+            document.getElementById('event-title').value = ev ? ev.title : '';
+            document.getElementById('event-date').value = ev ? ev.date : '';
+            document.getElementById('event-desc').value = ev ? ev.desc : '';
+            openModal('event-form-modal');
+        }
+
+        function saveEventForm(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+            const id = document.getElementById('event-id').value;
+            const obj = {
+                id: id || 'ev_' + Date.now(),
+                type: document.getElementById('event-type').value,
+                title: document.getElementById('event-title').value.trim(),
+                date: document.getElementById('event-date').value.trim(),
+                desc: document.getElementById('event-desc').value.trim()
+            };
+            if (id) {
+                const idx = appData.events.findIndex(item => item.id === id);
+                if (idx !== -1) appData.events[idx] = obj;
+                showToast('Đã cập nhật sự kiện!');
+            } else {
+                appData.events.unshift(obj);
+                showToast('Đã đăng sự kiện mới!');
+            }
+            saveData();
+            closeModal('event-form-modal');
+            e.target.reset();
+            renderCurrentTab();
+        }
+
+        function deleteEvent(id) {
+            if (!isAdmin) return;
+            showConfirm('Xóa sự kiện', 'Bạn muốn xóa thông báo sự kiện này?', () => {
+                appData.events = appData.events.filter(ev => ev.id !== id);
+                saveData();
+                renderCurrentTab();
+                showToast('Đã xóa sự kiện.');
+            });
+        }
+
+        // ==================== TAB 4: THƯ VIỆN TƯ LIỆU & QUẢN TRỊ ====================
+        function renderGallerySettingsTab() {
+            const ul = appData.uiLabels;
+            const catLabels = {
+                photo: { name: 'Ảnh Kỷ Niệm', badge: 'bg-amber-100 text-amber-900' },
+                document: { name: 'Tài Liệu Cổ', badge: 'bg-crimson-900 text-amber-100' },
+                prayer: { name: 'Văn Khấn', badge: 'bg-emerald-100 text-emerald-900' }
+            };
+
+            return `
+                <div class="p-4 space-y-5">
+                    <div class="space-y-3">
+                        <div class="flex items-center justify-between gap-2">
+                            <div>
+                                <h2 class="font-serif font-bold text-xl text-crimson-950">
+                                    ${editableTextHtml('uiLabels.galleryTabTitle', 'Tiêu đề trang Tư liệu', ul.galleryTabTitle)}
+                                </h2>
+                                <p class="text-xs text-stone-500">
+                                    ${editableTextHtml('uiLabels.galleryTabSubtitle', 'Mô tả phụ trang Tư liệu', ul.galleryTabSubtitle)}
+                                </p>
+                            </div>
+                            ${isAdmin ? `
+                                <button onclick="openGalleryFormModal()" class="bg-crimson-800 text-white px-3.5 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 shadow hover:bg-crimson-700 shrink-0">
+                                    <i data-lucide="plus" class="w-4 h-4"></i> Thêm tư liệu
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <div class="grid grid-cols-1 gap-3.5">
+                            ${appData.gallery.map(item => {
+                                const cat = catLabels[item.category || 'photo'] || catLabels.photo;
+                                return `
+                                    <div class="bg-white rounded-2xl overflow-hidden border border-amber-200 shadow-2xs relative">
+                                        ${item.url ? `<img src="${item.url}" onerror="this.style.display='none'" class="w-full h-48 object-cover">` : ''}
+                                        <div class="p-4 space-y-2">
+                                            <div class="flex items-center justify-between gap-2">
+                                                <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold ${cat.badge}">${cat.name}</span>
+                                                <div class="flex items-center gap-1.5">
+                                                    <span class="text-[11px] text-stone-400">${item.date || ''}</span>
+                                                    ${isAdmin ? `
+                                                        <button onclick="openGalleryFormModal('${item.id}')" class="p-1.5 rounded-lg bg-amber-100 text-amber-900 hover:bg-amber-200" title="Sửa tư liệu">
+                                                            <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
+                                                        </button>
+                                                        <button onclick="deleteGalleryPhoto('${item.id}')" class="p-1.5 rounded-lg bg-red-50 text-red-700 hover:bg-red-100" title="Xóa tư liệu">
+                                                            <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                                                        </button>
+                                                    ` : ''}
+                                                </div>
+                                            </div>
+                                            <h4 class="font-serif font-bold text-base text-stone-900">${item.title}</h4>
+                                            ${item.note ? `<p class="text-xs text-stone-700 leading-relaxed whitespace-pre-line bg-heritage-50 p-3 rounded-xl border border-amber-100">${item.note}</p>` : ''}
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+
+                    <!-- Thông Tin Liên Hệ Ban Quản Trị -->
+                    <div class="bg-gradient-to-br from-amber-50 to-heritage-100 rounded-2xl p-4 border border-amber-300/80 shadow-2xs space-y-2">
+                        <div class="flex items-center gap-2 text-crimson-900 font-serif font-bold text-base">
+                            <i data-lucide="phone-call" class="w-4 h-4 text-amber-700"></i>
+                            <h3>${editableTextHtml('uiLabels.adminContactTitle', 'Tiêu đề liên hệ Ban quản trị', ul.adminContactTitle)}</h3>
+                        </div>
+                        <div class="text-xs text-stone-700 leading-relaxed whitespace-pre-line">
+                            ${editableTextHtml('uiLabels.adminContactInfo', 'Nội dung liên hệ Ban quản trị', ul.adminContactInfo)}
+                        </div>
+                    </div>
+
+                    <!-- Khu Vực Quản Trị & Cài Đặt Hệ Thống -->
+                    <div class="bg-white rounded-2xl p-4 border border-amber-200 shadow-2xs space-y-4">
+                        <div class="flex items-center gap-2 border-b border-amber-100 pb-2.5">
+                            <i data-lucide="shield" class="w-5 h-5 text-crimson-800"></i>
+                            <h3 class="font-serif font-bold text-base text-stone-900">Quản Trị & Cấu Hình Website</h3>
+                        </div>
+
+                        ${!isAdmin ? `
+                            <div class="bg-amber-50/80 p-4 rounded-xl border border-amber-200 text-center space-y-2.5">
+                                <p class="text-xs text-stone-600">Bạn đang truy cập với tư cách <b>Thành viên xem</b>. Mọi thông tin và cấu hình chỉ được chỉnh sửa bởi Chủ Website.</p>
+                                <button onclick="openAdminLogin()" class="w-full py-2.5 rounded-xl bg-crimson-800 text-white font-semibold text-sm shadow flex items-center justify-center gap-2">
+                                    <i data-lucide="key-round" class="w-4 h-4"></i> Đăng nhập Chủ Website
+                                </button>
+                            </div>
+                        ` : `
+                            <div class="space-y-4">
+                                <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-xl flex items-center justify-between">
+                                    <div class="flex items-center gap-2 text-emerald-800 text-xs font-semibold">
+                                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                                        <span>Đang bật quyền Chủ Website</span>
+                                    </div>
+                                    <button onclick="logoutAdmin()" class="text-xs font-bold text-crimson-800 underline shrink-0">Đăng xuất</button>
+                                </div>
+
+                                <!-- Nút cấu hình Ảnh bìa, Dòng chữ bìa & Thứ tự Tab -->
+                                <button onclick="openCoverAndTabsModal()" class="w-full py-2.5 rounded-xl bg-amber-500 text-stone-950 font-bold text-xs shadow-xs flex items-center justify-center gap-2 hover:bg-amber-400 transition">
+                                    <i data-lucide="sliders-horizontal" class="w-4 h-4"></i> Cấu Hình Ảnh Bìa, Dòng Chữ & Thứ Tự Tab
+                                </button>
+
+                                <!-- Đổi mã PIN -->
+                                <form onsubmit="changeAdminPin(event)" class="space-y-2 pt-2 border-t border-stone-100">
+                                    <label class="block text-xs font-bold text-stone-700">Đổi mã PIN Chủ Website</label>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <input type="password" id="old-pin" placeholder="PIN hiện tại" required class="px-3 py-2 rounded-xl border border-stone-300 text-xs outline-none">
+                                        <input type="password" id="new-pin" placeholder="PIN mới" required class="px-3 py-2 rounded-xl border border-stone-300 text-xs outline-none">
+                                    </div>
+                                    <button type="submit" class="w-full py-2 rounded-xl bg-stone-800 text-white text-xs font-semibold hover:bg-stone-700">Cập nhật mã PIN</button>
+                                </form>
+
+                                <!-- Sao lưu & Khôi phục dữ liệu -->
+                                <div class="pt-3 border-t border-stone-100 space-y-2">
+                                    <label class="block text-xs font-bold text-stone-700">Sao lưu & Khôi phục toàn bộ Gia Phả</label>
+                                    <p class="text-[11px] text-stone-500">Tải file sao lưu về máy để lưu trữ lâu dài hoặc chuyển sang điện thoại khác.</p>
+                                    <div class="grid grid-cols-2 gap-2">
+                                        <button onclick="exportDataJSON()" class="py-2.5 px-3 rounded-xl bg-amber-100 text-amber-950 font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-amber-200 transition">
+                                            <i data-lucide="download" class="w-4 h-4"></i> Xuất file JSON
+                                        </button>
+                                        <label for="import-json-input" class="py-2.5 px-3 rounded-xl bg-stone-100 text-stone-800 font-semibold text-xs flex items-center justify-center gap-1.5 hover:bg-stone-200 cursor-pointer transition">
+                                            <i data-lucide="upload" class="w-4 h-4"></i> Nhập file JSON
+                                        </label>
+                                        <input type="file" id="import-json-input" accept=".json" class="hidden" onchange="importDataJSON(event)">
+                                    </div>
+                                </div>
+                            </div>
+                        `}
+                    </div>
+
+                    <!-- Hướng dẫn cài đặt như App trên điện thoại -->
+                    <div class="bg-heritage-100/70 rounded-2xl p-4 border border-amber-200/80 text-xs text-stone-600 space-y-1.5">
+                        <div class="font-bold text-amber-950 flex items-center gap-1.5">
+                            <i data-lucide="smartphone" class="w-4 h-4 text-crimson-800"></i> Mẹo sử dụng như App trên điện thoại:
+                        </div>
+                        <p>• <b>iPhone (Safari):</b> Bấm nút <b>Chia sẻ (Share)</b> ở dưới cùng → Chọn <b>Thêm vào MH chính (Add to Home Screen)</b>.</p>
+                        <p>• <b>Android (Chrome):</b> Bấm dấu <b>3 chấm</b> góc trên → Chọn <b>Cài đặt ứng dụng / Thêm vào màn hình chính</b>.</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        function openGalleryFormModal(id = null) {
+            if (!isAdmin) return;
+            const item = id ? appData.gallery.find(g => g.id === id) : null;
+            document.getElementById('gallery-modal-title').textContent = item ? 'Chỉnh Sửa Tư Liệu Dòng Họ' : 'Thêm Tư Liệu Mới';
+            document.getElementById('gallery-id').value = item ? item.id : '';
+            document.getElementById('gallery-category').value = item ? (item.category || 'photo') : 'photo';
+            document.getElementById('gallery-title').value = item ? item.title : '';
+            document.getElementById('gallery-date').value = item ? (item.date || '') : new Date().getFullYear().toString();
+            document.getElementById('gallery-note').value = item ? (item.note || '') : '';
+            document.getElementById('gallery-img-data').value = item ? (item.url || '') : '';
+            document.getElementById('gallery-img-preview').src = (item && item.url) ? item.url : 'https://placehold.co/300x200/f2dfc2/7c2d12?text=Chua+co+anh';
+            openModal('gallery-form-modal');
+            lucide.createIcons();
+        }
+
+        function saveGalleryForm(e) {
+            e.preventDefault();
+            if (!isAdmin) return;
+            const id = document.getElementById('gallery-id').value;
+            const obj = {
+                id: id || 'g_' + Date.now(),
+                category: document.getElementById('gallery-category').value,
+                title: document.getElementById('gallery-title').value.trim(),
+                date: document.getElementById('gallery-date').value.trim(),
+                url: document.getElementById('gallery-img-data').value,
+                note: document.getElementById('gallery-note').value.trim()
+            };
+            if (id) {
+                const idx = appData.gallery.findIndex(g => g.id === id);
+                if (idx !== -1) appData.gallery[idx] = obj;
+                showToast('Đã cập nhật tư liệu!');
+            } else {
+                appData.gallery.unshift(obj);
+                showToast('Đã thêm tư liệu mới!');
+            }
+            saveData();
+            closeModal('gallery-form-modal');
+            renderCurrentTab();
+        }
+
+        function deleteGalleryPhoto(id) {
+            if (!isAdmin) return;
+            showConfirm('Xóa tư liệu', 'Bạn có chắc muốn xóa mục tư liệu này khỏi thư viện?', () => {
+                appData.gallery = appData.gallery.filter(g => g.id !== id);
+                saveData();
+                renderCurrentTab();
+                showToast('Đã xóa tư liệu.');
+            });
+        }
+
+        // ==================== XỬ LÝ ẢNH & SAO LƯU JSON ====================
+        function handleImageUpload(event, previewId, hiddenInputId, maxWidth) {
+            const file = event.target.files[0];
+            if (!file) return;
+            compressImage(file, maxWidth, (base64) => {
+                document.getElementById(previewId).src = base64;
+                document.getElementById(hiddenInputId).value = base64;
+                showToast('Đã tải ảnh lên thành công!');
+            });
+        }
+
+        function compressImage(file, maxWidth, callback) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    callback(canvas.toDataURL('image/jpeg', 0.8));
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function exportDataJSON() {
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(appData, null, 2));
+            const dlAnchor = document.createElement('a');
+            dlAnchor.setAttribute("href", dataStr);
+            dlAnchor.setAttribute("download", `GiaPha_Backup_${new Date().toISOString().slice(0,10)}.json`);
+            document.body.appendChild(dlAnchor);
+            dlAnchor.click();
+            dlAnchor.remove();
+            showToast('Đã tải xuống file sao lưu dữ liệu!');
+        }
+
+        function importDataJSON(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    if (imported && imported.members) {
+                        appData = {
+                            ...JSON.parse(JSON.stringify(DEFAULT_DATA)),
+                            ...imported
+                        };
+                        saveData();
+                        renderBottomNav();
+                        renderCurrentTab();
+                        showToast('Khôi phục dữ liệu gia phả thành công!');
+                    } else {
+                        showToast('File không đúng định dạng Gia Phả!', true);
+                    }
+                } catch (err) {
+                    showToast('Lỗi đọc file JSON!', true);
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ==================== TIỆN ÍCH MODAL & TOAST ====================
+        function openModal(id) {
+            document.getElementById(id).classList.remove('hidden');
+            lucide.createIcons();
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).classList.add('hidden');
+        }
+
+        function showConfirm(title, message, onYes) {
+            document.getElementById('confirm-title').textContent = title;
+            document.getElementById('confirm-message').textContent = message;
+            const yesBtn = document.getElementById('confirm-yes-btn');
+            yesBtn.onclick = () => {
+                closeModal('confirm-modal');
+                onYes();
+            };
+            openModal('confirm-modal');
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-msg');
+            toastMsg.textContent = msg;
+            toast.classList.remove('hidden', 'bg-stone-900/95', 'bg-red-900/95');
+            toast.classList.add(isError ? 'bg-red-900/95' : 'bg-stone-900/95');
+            clearTimeout(window.toastTimer);
+            window.toastTimer = setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        window.onload = initApp;
+    </script>
+</body>
+</html>
