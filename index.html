@@ -567,7 +567,7 @@
             tabs: [
                 { id: 'tree', label: 'Cây Gia Phả', icon: 'git-fork' },
                 { id: 'lineage', label: 'Dòng Họ', icon: 'scroll-text' },
-                { id: 'events', label: 'Lịch & Tin', icon: 'calendar-heart' },
+                { id: 'events', label: 'Tin & Sự Kiện', icon: 'calendar-heart' },
                 { id: 'archive', label: 'Tư Liệu & Cài Đặt', icon: 'images' }
             ],
             coverConfig: {
@@ -575,9 +575,7 @@
                 yearBadge: 'Lập phả năm Bính Ngọ 2026',
                 showStats: true,
                 lines: [
-                    { id: 'cl_1', text: 'PHẢ HỆ TRUYỀN THỐNG', style: 'badge' },
-                    { id: 'cl_2', text: 'GIA PHẢ HỌ VÕ', style: 'title' },
-                    { id: 'cl_3', text: 'Làng An Hòa • Xã Bình Minh • Quảng Nam', style: 'subtitle' },
+                    { id: 'cl_3', text: 'Phường Hoaì Châu Bắc • Tỉnh Gia Lai (Bình Định cũ)', style: 'subtitle' },
                     { id: 'cl_4', text: '“Tổ tông công đức thiên niên thịnh – Tử hiếu tôn hiền vạn đại vinh”', style: 'motto' }
                 ]
             },
@@ -1304,7 +1302,6 @@
 
             // Xây dựng danh sách thông tin hành chính (chỉ hiện trường có dữ liệu)
             const adminFields = [
-                { label: 'Nơi khai sinh', val: member.birthplace },
                 { label: 'Quê quán', val: member.hometown },
                 { label: 'Dân tộc', val: member.ethnicity },
                 { label: 'Tôn giáo', val: member.religion },
